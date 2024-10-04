@@ -39,24 +39,41 @@ class P21ODataClient:
         }
         response = requests.get(url, headers=headers)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
+        if response.status_code != 200:
             raise Exception(f"Failed to fetch data: {response.text}")
+        data = response.json()
+
+        value = data.get("value")
+        if not value:
+            raise ValueError(
+                "Value key not found in data response. \
+                            This is an error"
+            )
+        return value
 
     def compose_url(
         self,
         endpoint: str,
+        api: str,
         start_date: "datetime | None" = None,
         **kwargs,
     ) -> str:
-        url = f"{self.base_url}/data/erp/views/v1/{endpoint}"
+        filter_params = []
+
+        url = f"{self.base_url}"
+        if api == "data":
+            url += "/data/erp/views/v1/"
+        elif api == "odataservice":
+            url += "/odataservice/odata/view/"
+        url += f"{endpoint}"
 
         url_params = []
 
         # list of fields to select from the endpoint
         selects = kwargs.get("selects")
-        if selects:
+        if not selects:
+            raise ValueError("selects is required")
+        else:
             url_params.append(f"$select={','.join(selects)}")
 
         # Datetime filters can be None.  If None, that kwargs filters is
@@ -78,6 +95,7 @@ class P21ODataClient:
             ]
 
         filters = kwargs.get("filters")
+        # print(f"type: {type(filters)} filters: {filters}")
         if not start_date and not filters:
             raise ValueError(
                 "Either start_date or filters must be provided. \
@@ -106,24 +124,32 @@ class P21ODataClient:
         )[1]
         return input_datetime.replace(day=last_day_of_month)
 
-    def query(
+    def query_data(
         self,
         endpoint: str,
-        start_date: datetime,
+        start_date: datetime | None = None,
         **kwargs,
-    ) -> dict:
-        """Get data and save to csv"""
+    ) -> tuple[dict, str]:
         url = self.compose_url(
             endpoint=endpoint,
+            api="data",
             start_date=start_date,
             **kwargs,
         )
 
-        data = self.fetch_data(url)
-        value = data.get("value")
-        if not value:
-            raise ValueError(
-                "Value key not found in data response. \
-                            This is an error"
-            )
-        return value
+        return self.fetch_data(url), url
+
+    def query_odataservice(
+        self,
+        endpoint: str,
+        start_date: datetime | None = None,
+        **kwargs,
+    ) -> tuple[dict, str]:
+        url = self.compose_url(
+            endpoint=endpoint,
+            api="odataservice",
+            start_date=start_date,
+            **kwargs,
+        )
+
+        return self.fetch_data(url), url
