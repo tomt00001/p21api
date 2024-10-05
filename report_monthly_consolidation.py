@@ -9,7 +9,7 @@ class ReportMonthlyConsolidation(Report_Base):
         return "monthly_consolidation_"
 
     def run(self) -> None:
-        p21_view_invoice_hdr_data = self._client.query(
+        invoice_data, url = self._client.query_odataservice(
             "p21_view_invoice_hdr",
             start_date=self._start_date,
             selects=[
@@ -27,8 +27,8 @@ class ReportMonthlyConsolidation(Report_Base):
             filters=["consolidated eq 'Y'"],
             order_by=["year_for_period asc", "invoice_no asc"],
         )
-        p21_view_invoice_hdr = etl.fromdicts(p21_view_invoice_hdr_data)
+        invoice = etl.fromdicts(invoice_data)
         etl.tocsv(
-            p21_view_invoice_hdr,
-            self.file_name("p21_view_invoice_hdr"),
+            invoice,
+            self.file_name("report"),
         )
