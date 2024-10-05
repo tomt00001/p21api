@@ -5,13 +5,18 @@ import requests
 
 
 class P21ODataClient:
-    def __init__(self, base_url: str, username: str, password: str) -> None:
+    def __init__(
+        self, base_url: str, username: str, password: str, *args, **kwargs
+    ) -> None:
         self.base_url = base_url
         self.headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
         self.token = self.get_bearer_token(username, password)
+
+        if "debug" in kwargs:
+            self.debug = bool(kwargs.get("debug"))
 
     def get_bearer_token(self, username: str, password: str) -> str:
         """Authenticate and get Bearer token."""
@@ -78,24 +83,17 @@ class P21ODataClient:
 
         # Datetime filters can be None.  If None, that kwargs filters is
         # required to be populated with a filter
-        if start_date:
-            start_datetime = start_date
-            str_start_date = self._datetime_to_str(start_datetime)
-
-            end_date = kwargs.get("end_date")
-            if end_date:
-                end_datetime = end_date
-            else:
-                end_datetime = self._get_current_month_end_date(start_datetime)
-            str_end_date = self._datetime_to_str(end_datetime)
-
-            filter_params = [
-                f"date_created ge datetime'{str_start_date}'",
-                f"date_created le datetime'{str_end_date}'",
-            ]
+        if start_date_datetime := start_date:
+            end_date_time = kwargs.get("end_date") or self.get_current_month_end_date(
+                start_date_datetime
+            )
+            filter_params = self.get_datetime_filter(
+                "date_created", start_date_datetime, end_date_time, api
+            )
 
         filters = kwargs.get("filters")
-        # print(f"type: {type(filters)} filters: {filters}")
+        if self.debug:
+            print(f"type: {type(filters)} filters: {filters}")
         if not start_date and not filters:
             raise ValueError(
                 "Either start_date or filters must be provided. \
@@ -110,12 +108,37 @@ class P21ODataClient:
         if order_by:
             url_params.append(f"$orderby={','.join(order_by)}")
 
-        return f"{url}?{'&'.join(url_params)}"
+        final_url = f"{url}?{'&'.join(url_params)}"
+        if self.debug:
+            print(f"url: {final_url}")
+        return final_url
+
+    def get_datetime_filter(
+        self,
+        field: str,
+        start_date: datetime,
+        end_date: datetime,
+        api: str,
+    ) -> list[str]:
+        str_start_date = self._datetime_to_str(start_date)
+        str_end_date = self._datetime_to_str(end_date)
+        if api == "data":
+            return [
+                f"{field} ge datetime'{str_start_date}'",
+                f"{field} le datetime'{str_end_date}'",
+            ]
+        elif api == "odataservice":
+            return [
+                f"{field} ge {str_start_date}",
+                f"{field} le {str_end_date}",
+            ]
+        else:
+            raise ValueError("Invalid API type")
 
     def _datetime_to_str(self, input_datetime: datetime) -> str:
         return input_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def _get_current_month_end_date(
+    def get_current_month_end_date(
         self,
         input_datetime: datetime,
     ) -> datetime:

@@ -10,7 +10,7 @@ class ReportDailySales(Report_Base):
         return "daily_sales_"
 
     def run(self) -> None:
-        invoice_data, url = self._client.query_data(
+        invoice_data, url = self._client.query_odataservice(
             "p21_view_invoice_hdr",
             start_date=self._start_date,
             selects=[
