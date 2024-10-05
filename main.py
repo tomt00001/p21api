@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from p21_odata_client import P21ODataClient
 from report_daily_sales import ReportDailySales
+from report_jarp import ReportJarp
 from report_kennametal_pos import ReportKennametalPos
 from report_monthly_consolidation import ReportMonthlyConsolidation
 from report_monthly_invoices import ReportMonthlyInvoices
@@ -37,6 +38,7 @@ if __name__ == "__main__":
         ReportOpenOrders,
         ReportMonthlyInvoices,
         ReportMonthlyConsolidation,
+        ReportJarp,
     ]
     for report_class in report_classes:
         report = report_class(client=client, start_date=date_input, debug=_debug)
