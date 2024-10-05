@@ -10,6 +10,7 @@ from report_open_orders import ReportOpenOrders
 if __name__ == "__main__":
     load_dotenv()
 
+    debug = bool(os.getenv("DEBUG")) or False
     base_url = os.getenv("BASE_URL")
     username = os.getenv("APIUSERNAME")
     password = os.getenv("APIPASSWORD")
@@ -23,9 +24,12 @@ if __name__ == "__main__":
     if date_input is None:
         raise ValueError("Missing date input")
 
-    client = P21ODataClient(base_url, username, password, debug=True)
+    client = P21ODataClient(base_url, username, password, debug=debug)
 
-    report_classes = [ReportDailySales, ReportOpenOrders]
+    report_classes = [
+        ReportDailySales,
+        ReportOpenOrders,
+    ]
     for report_class in report_classes:
         report = report_class(client=client, start_date=date_input)
         report.run()
