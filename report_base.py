@@ -5,10 +5,16 @@ from p21_odata_client import P21ODataClient
 
 
 class Report_Base(ABC):
-    def __init__(self, client: "P21ODataClient", start_date: datetime) -> None:
+    def __init__(
+        self,
+        client: "P21ODataClient",
+        start_date: datetime,
+        debug: bool = False,
+    ) -> None:
         self._client = client
         self._start_date = start_date
         self.output_path = "output/"
+        self._debug = debug
 
     @property
     @abstractmethod

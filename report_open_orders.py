@@ -41,6 +41,8 @@ class ReportOpenOrders(Report_Base):
             order_by=["customer_id asc", "order_no asc", "line_no asc"],
         )
         order = etl.fromdicts(order_data)
+        if self._debug:
+            etl.tocsv(order, self.file_name("order"))
         order_no_filters = " or ".join(
             [
                 f"order_no eq '{order_no}'"
@@ -59,6 +61,8 @@ class ReportOpenOrders(Report_Base):
             filters=[f"({order_no_filters})"],
         )
         order_ack_line = etl.fromdicts(order_ack_line_data)
+        if self._debug:
+            etl.tocsv(order_ack_line, self.file_name("order_ack_line"))
 
         joined = etl.join(
             order,
@@ -66,6 +70,8 @@ class ReportOpenOrders(Report_Base):
             lkey=("order_no", "item_id", "line_no"),
             rkey=("order_no", "item_id", "line_number"),
         )
+        if self._debug:
+            etl.tocsv(joined, self.file_name("joined"))
 
         selected = etl.cut(
             joined,

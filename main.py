@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from p21_odata_client import P21ODataClient
 from report_daily_sales import ReportDailySales
+from report_kennametal_pos import ReportKennametalPos
 from report_monthly_consolidation import ReportMonthlyConsolidation
 from report_monthly_invoices import ReportMonthlyInvoices
 from report_open_orders import ReportOpenOrders
@@ -12,7 +13,9 @@ from report_open_orders import ReportOpenOrders
 if __name__ == "__main__":
     load_dotenv()
 
-    debug = bool(os.getenv("DEBUG")) or False
+    _debug = (os.getenv("DEBUG") and os.getenv("DEBUG") == "True") or False
+    if _debug:
+        print("*** Debug mode ***")
     base_url = os.getenv("BASE_URL")
     username = os.getenv("APIUSERNAME")
     password = os.getenv("APIPASSWORD")
@@ -26,14 +29,15 @@ if __name__ == "__main__":
     if date_input is None:
         raise ValueError("Missing date input")
 
-    client = P21ODataClient(base_url, username, password, debug=debug)
+    client = P21ODataClient(base_url, username, password, debug=_debug)
 
     report_classes = [
+        ReportKennametalPos,
         ReportDailySales,
         ReportOpenOrders,
         ReportMonthlyInvoices,
         ReportMonthlyConsolidation,
     ]
     for report_class in report_classes:
-        report = report_class(client=client, start_date=date_input)
+        report = report_class(client=client, start_date=date_input, debug=_debug)
         report.run()
