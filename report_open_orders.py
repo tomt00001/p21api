@@ -1,3 +1,5 @@
+import petl as etl
+
 from report_base import Report_Base
 
 
@@ -6,52 +8,92 @@ class ReportOpenOrders(Report_Base):
     def file_name_prefix(self) -> str:
         return "open_orders_"
 
-    def run(self) -> None:
-        # p21_order_view
-        # ship2_name
-        # order_date
-        # customer_id
-        # order_no
-        # item_id
-        # qty_ordered
-        # completed
-        # quote_flag
-        # qty_allocated
-        # qty_invoiced
-        # po_no
-        # disposition
-        # qty_on_pick_tickets
-        # qty_canceled
-        # line_no
-        # item_desc
-        # order_no
-        # item_id
-        # line_no
+    def run(self):
+        order_data, url = self._client.query_odataservice(
+            "p21_order_view",
+            selects=[
+                "completed",
+                "customer_id",
+                "disposition",
+                "item_id",
+                "line_no",
+                "order_date",
+                "order_no",
+                "po_no",
+                "qty_allocated",
+                "qty_canceled",
+                "qty_invoiced",
+                "qty_on_pick_tickets",
+                "qty_ordered",
+                "quote_flag",
+                "ship2_name",
+            ],
+            filters=[
+                "completed eq 'N'",
+                "quote_flag eq 'N'",
+                "(customer_id eq 12087 or customer_id eq 12139 or "
+                "customer_id eq 12149 or customer_id eq 12344 or "
+                "customer_id eq 12620 or customer_id eq 12976 or "
+                "customer_id eq 13191 or customer_id eq 13321 or "
+                "customer_id eq 13627 or customer_id eq 14048 or "
+                "customer_id eq 14211)",
+            ],
+            order_by=["customer_id asc", "order_no asc", "line_no asc"],
+        )
+        order = etl.fromdicts(order_data)
+        order_no_filters = " or ".join(
+            [
+                f"order_no eq '{order_no}'"
+                for order_no in {row["order_no"] for row in order_data}
+            ]
+        )
 
-        # filters = ["completed eq 'N'", "quote_flag eq 'N'"]
-        #    AND ( "p21_order_view"."customer_id" = 12087
-        #           OR "p21_order_view"."customer_id" = 12139
-        #           OR "p21_order_view"."customer_id" = 12149
-        #           OR "p21_order_view"."customer_id" = 12344
-        #           OR "p21_order_view"."customer_id" = 12620
-        #           OR "p21_order_view"."customer_id" = 12976
-        #           OR "p21_order_view"."customer_id" = 13191
-        #           OR "p21_order_view"."customer_id" = 13321
-        #           OR "p21_order_view"."customer_id" = 13627
-        #           OR "p21_order_view"."customer_id" = 14048
-        #           OR "p21_order_view"."customer_id" = 14211 )
-        # order_by = ["customer_id asc", "order_no", "line_no"]
+        order_ack_line_data, url = self._client.query_odataservice(
+            "p21_view_ord_ack_line",
+            selects=[
+                "item_desc",
+                "item_id",
+                "line_number",
+                "order_no",
+            ],
+            filters=[f"({order_no_filters})"],
+        )
+        order_ack_line = etl.fromdicts(order_ack_line_data)
 
-        # TODO need a list of order_nos to filter this one from a previous step
-        # created_date does not exist
-        # p21_view_ord_ack_line_data = self._client.query(
-        #     "p21_view_ord_ack_line",
-        #     start_date=self._start_date,
-        #     select=["item_desc", "item_id" "line_number", "order_no"],
-        # )
-        # p21_view_ord_ack_line = etl.fromdicts(p21_view_ord_ack_line_data)
-        # etl.tocsv(
-        #     p21_view_ord_ack_line,
-        #     self.file_name("p21_view_ord_ack_line"),
-        # )
-        pass
+        joined = etl.join(
+            order,
+            order_ack_line,
+            lkey=("order_no", "item_id", "line_no"),
+            rkey=("order_no", "item_id", "line_number"),
+        )
+
+        selected = etl.cut(
+            joined,
+            "completed",
+            "customer_id",
+            "disposition",
+            "item_id",
+            "line_no",
+            "order_date",
+            "order_no",
+            "po_no",
+            "qty_allocated",
+            "qty_canceled",
+            "qty_invoiced",
+            "qty_on_pick_tickets",
+            "qty_ordered",
+            "quote_flag",
+            "ship2_name",
+            "item_desc",
+        )
+
+        sorted_table = etl.sort(
+            selected,
+            key=[
+                "customer_id",
+                "order_no",
+                "line_no",
+            ],
+        )
+
+        etl.tocsv(sorted_table, self.file_name("report"))

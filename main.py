@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from p21_odata_client import P21ODataClient
 from report_daily_sales import ReportDailySales
+from report_open_orders import ReportOpenOrders
 
 if __name__ == "__main__":
     load_dotenv()
@@ -22,9 +23,9 @@ if __name__ == "__main__":
     if date_input is None:
         raise ValueError("Missing date input")
 
-    client = P21ODataClient(base_url, username, password)
+    client = P21ODataClient(base_url, username, password, debug=True)
 
-    report_classes = [ReportDailySales]
+    report_classes = [ReportDailySales, ReportOpenOrders]
     for report_class in report_classes:
         report = report_class(client=client, start_date=date_input)
         report.run()
