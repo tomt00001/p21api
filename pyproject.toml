@@ -6,7 +6,7 @@ authors = ["tomt00001 <107521427+tomt00001@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.14"
 requests = "^2.32.3"
 petl = "^1.7.15"
 python-dotenv = "^1.0.1"
@@ -17,6 +17,7 @@ ipdb = "^0.13.13"
 ruff = "^0.6.8"
 black = "^24.8.0"
 ipython = "^8.27.0"
+pyinstaller = "^6.10.0"
 
 
 [build-system]
