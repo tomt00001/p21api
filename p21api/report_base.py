@@ -10,7 +10,6 @@ class ReportBase(ABC):
         self._client = client
         self.config = config
         self._start_date = config.start_date
-        self.output_path = "output/"
         self._debug = config.debug
 
     @property
@@ -20,7 +19,7 @@ class ReportBase(ABC):
 
     def file_name(self, name_part: str) -> str:
         return (
-            f"{self.output_path}{self.file_name_prefix}{name_part}_"
+            f"{self.config.output_folder}{self.file_name_prefix}{name_part}_"
             f"{self._file_name_suffix()}.csv"
         )
 

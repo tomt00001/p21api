@@ -2,12 +2,14 @@ import calendar
 from dataclasses import dataclass
 from datetime import datetime
 from os import getenv
+from pathlib import Path
 
 
 @dataclass
 class Config:
     def __init__(
         self,
+        output_folder: str | None = None,
         base_url: str | None = None,
         username: str | None = None,
         password: str | None = None,
@@ -22,30 +24,34 @@ class Config:
             )
         self.base_url = base_url
 
+        self.set_output_folder(output_folder)
         self.set_username(username)
         self.set_password(password)
         self.set_start_date(start_date)
         self.set_end_date(end_date)
 
+        self.show_gui = False
         if show_gui and isinstance(show_gui, str):
             self.show_gui = show_gui == "True"
         elif show_gui and isinstance(show_gui, bool):
             self.show_gui = show_gui
         elif not show_gui and not self.start_date:
             self.show_gui = True
-        else:
-            self.show_gui = False
 
-        if debug:
-            self.debug = True
-        else:
-            self.debug = (getenv("DEBUG") and getenv("DEBUG") == "True") or False
+        self.debug = False
+        if debug and isinstance(debug, bool):
+            self.debug = debug
+        elif debug and isinstance(debug, str):
+            debug = getenv("DEBUG")
+            if debug and debug == "True":
+                self.debug = True
 
     base_url: str
     username: str | None
     password: str | None
     start_date: datetime
     end_date: datetime
+    output_folder: str
     show_gui: bool = True
     debug: bool = False
 
@@ -79,7 +85,18 @@ class Config:
         if not self.end_date:
             return None
 
-    def from_gui_input(self, input_data: dict[str, str | datetime | None]) -> None:
+    def set_output_folder(self, output_folder: str | None = None) -> None:
+        if not output_folder:
+            self.output_folder = "./output/"
+        else:
+            self.output_folder = output_folder
+
+        Path(self.output_folder).mkdir(parents=True, exist_ok=True)
+
+    def from_gui_input(
+        self,
+        input_data: dict[str, str | datetime | None],
+    ) -> None:
         if start_date := input_data.get("start_date"):
             self.set_start_date(start_date)
         if end_date := input_data.get("end_date"):
@@ -92,11 +109,18 @@ class Config:
         if password and isinstance(password, str):
             self.set_password(password)
 
+        output_folder = input_data.get("output_folder")
+        if output_folder and isinstance(output_folder, str):
+            self.set_output_folder(output_folder)
+
     def _date_start_of_month(self, input_date: datetime) -> datetime:
         return datetime(input_date.year, input_date.month, 1)
 
     def _date_end_of_month(self, input_date: datetime) -> datetime:
-        last_day_of_month = calendar.monthrange(input_date.year, input_date.month)[1]
+        last_day_of_month = calendar.monthrange(
+            input_date.year,
+            input_date.month,
+        )[1]
         return input_date.replace(day=last_day_of_month)
 
     @property
@@ -118,4 +142,6 @@ class Config:
             data["username"] = self.username
         if self.password:
             data["password"] = self.password
+        if self.output_folder:
+            data["output_folder"] = self.output_folder
         return data

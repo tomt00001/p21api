@@ -1,18 +1,20 @@
 import sys
 from datetime import datetime
 
-from p21api.config import Config
 from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import (
     QApplication,
     QDateEdit,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
 )
+
+from p21api.config import Config
 
 
 class DatePickerDialog(QDialog):
@@ -22,6 +24,7 @@ class DatePickerDialog(QDialog):
         end_date: datetime | None = None,
         username: str | None = "",
         password: str | None = "",
+        output_folder: str | None = "",
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -78,6 +81,16 @@ class DatePickerDialog(QDialog):
         self.password_edit.setText(password)  # Set default password
         layout.addWidget(self.password_edit)
 
+        # Output Folder Picker
+        layout.addWidget(QLabel("Output Folder"))
+        self.output_folder_edit = QLineEdit()
+        self.output_folder_edit.setText(output_folder)
+        layout.addWidget(self.output_folder_edit)
+
+        self.browse_button = QPushButton("Browse")
+        self.browse_button.clicked.connect(self.browse_folder)
+        layout.addWidget(self.browse_button)
+
         # Buttons (OK and Cancel)
         button_layout = QHBoxLayout()
         self.ok_button = QPushButton("OK")
@@ -92,6 +105,11 @@ class DatePickerDialog(QDialog):
         # Connect buttons
         self.ok_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
+
+    def browse_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            self.output_folder_edit.setText(folder)
 
     def get_data(self):
         data = {}
@@ -110,6 +128,11 @@ class DatePickerDialog(QDialog):
         password = self.password_edit.text()
         if password:
             data["password"] = password
+
+        # Get the output folder
+        output_folder = self.output_folder_edit.text()
+        if output_folder:
+            data["output_folder"] = f"{output_folder}/"
 
         return data
 

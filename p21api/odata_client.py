@@ -16,7 +16,10 @@ class ODataClient:
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-        self.token = self.get_bearer_token(self.config.username, self.config.password)
+        self.token = self.get_bearer_token(
+            self.config.username,
+            self.config.password,
+        )
 
     def get_headers(self) -> dict:
         if not self.token:
