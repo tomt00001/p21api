@@ -35,7 +35,9 @@ class ReportJarp(Report_Base):
         invoice_pre = etl.fromdicts(invoice_data)
         invoice = etl.select(
             invoice_pre,
-            lambda rec: not rec["po_no"].startswith("P"),
+            lambda rec: not rec.get("po_no").startswith("P")
+            if rec.get("po_no")
+            else True,
         )
         if self._debug:
             etl.tocsv(invoice, self.file_name("invoice"))
