@@ -1,9 +1,9 @@
 import petl as etl
 
-from report_base import Report_Base
+from .report_base import ReportBase
 
 
-class ReportKennametalPos(Report_Base):
+class ReportKennametalPos(ReportBase):
     @property
     def file_name_prefix(self) -> str:
         return "kennametal_pos_"

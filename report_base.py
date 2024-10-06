@@ -1,20 +1,17 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from p21_odata_client import P21ODataClient
+from .config import Config
+from .odata_client import ODataClient
 
 
-class Report_Base(ABC):
-    def __init__(
-        self,
-        client: "P21ODataClient",
-        start_date: datetime,
-        debug: bool = False,
-    ) -> None:
+class ReportBase(ABC):
+    def __init__(self, client: "ODataClient", config: "Config") -> None:
         self._client = client
-        self._start_date = start_date
+        self.config = config
+        self._start_date = config.start_date
         self.output_path = "output/"
-        self._debug = debug
+        self._debug = config.debug
 
     @property
     @abstractmethod
@@ -33,3 +30,7 @@ class Report_Base(ABC):
         else:
             date_to_output = input_date
         return date_to_output.strftime("%Y-%m-%d")
+
+    @abstractmethod
+    def run(self) -> None:
+        pass

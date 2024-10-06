@@ -1,9 +1,9 @@
 import petl as etl
 
-from report_base import Report_Base
+from .report_base import ReportBase
 
 
-class ReportJarp(Report_Base):
+class ReportJarp(ReportBase):
     @property
     def file_name_prefix(self) -> str:
         return "jarp_"

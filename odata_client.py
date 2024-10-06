@@ -3,31 +3,26 @@ from datetime import datetime
 
 import requests
 
+from .config import Config
 
-class P21ODataClient:
+
+class ODataClient:
     def __init__(
         self,
-        base_url: str,
-        username: str,
-        password: str,
-        debug: bool = False,
-        *args,
-        **kwargs,
+        config: "Config",
     ) -> None:
-        self.base_url = base_url
-        self._username = username
-        self._password = password
+        self.config = config
         self.headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-        self.token = self.get_bearer_token(username, password)
-
-        self._debug = debug
+        self.token = self.get_bearer_token(self.config.username, self.config.password)
 
     def get_headers(self) -> dict:
         if not self.token:
-            self.token = self.get_bearer_token(self._username, self._password)
+            self.token = self.get_bearer_token(
+                self.config.username, self.config.password
+            )
         return {
             **self.headers,
             "Authorization": f"Bearer {self.token}",
@@ -35,7 +30,7 @@ class P21ODataClient:
 
     def get_bearer_token(self, username: str, password: str) -> str:
         """Authenticate and get Bearer token."""
-        url = f"{self.base_url}/api/security/token"
+        url = f"{self.config.base_url}/api/security/token"
 
         response = requests.post(
             url,
@@ -72,7 +67,7 @@ class P21ODataClient:
         return value
 
     def _get_endpoint_url(self, endpoint: str) -> str:
-        return f"{self.base_url}/odataservice/odata/view/{endpoint}"
+        return f"{self.config.base_url}/odataservice/odata/view/{endpoint}"
 
     def _get_selects(self, selects: list[str]) -> str:
         return f"$select={','.join(selects)}"
@@ -115,7 +110,7 @@ class P21ODataClient:
             filter_params = self._get_startdate_filter(start_date) or []
 
         filters = kwargs.get("filters")
-        if self._debug:
+        if self.config.debug:
             print(f"type: {type(filters)} filters: {filters}")
         if filters:
             filter_params.extend(filters)
@@ -126,7 +121,7 @@ class P21ODataClient:
             url_params.append(self._get_order_by(order_by))
 
         final_url = f"{url}?{'&'.join(url_params)}"
-        if self._debug:
+        if self.config.debug:
             print(f"url: {final_url}")
         return final_url
 
@@ -189,7 +184,7 @@ class P21ODataClient:
         )
         url = f"{url}&$count=true&$top={page_size}"
 
-        if self._debug:
+        if self.config.debug:
             print(f"url: {url}")
 
         max_count = 0
@@ -209,7 +204,7 @@ class P21ODataClient:
 
             max_count = response.json().get("@odata.count")
             count += page_size
-            if self._debug:
+            if self.config.debug:
                 print(f"count: {count} max_count: {max_count}")
 
             if count > max_count:

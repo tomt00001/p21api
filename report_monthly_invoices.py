@@ -1,10 +1,10 @@
 
 import petl as etl
 
-from report_base import Report_Base
+from .report_base import ReportBase
 
 
-class ReportMonthlyInvoices(Report_Base):
+class ReportMonthlyInvoices(ReportBase):
     @property
     def file_name_prefix(self) -> str:
         return "monthly_invoices_"

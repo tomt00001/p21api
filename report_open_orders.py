@@ -1,9 +1,9 @@
 import petl as etl
 
-from report_base import Report_Base
+from .report_base import ReportBase
 
 
-class ReportOpenOrders(Report_Base):
+class ReportOpenOrders(ReportBase):
     @property
     def file_name_prefix(self) -> str:
         return "open_orders_"
