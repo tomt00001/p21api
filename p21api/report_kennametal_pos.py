@@ -41,6 +41,8 @@ class ReportKennametalPos(ReportBase):
             ],
             filters=filters,
         )
+        if not sales_data:
+            return
         sales = etl.fromdicts(sales_data)
         if self._debug:
             etl.tocsv(sales, self.file_name("sales"))
@@ -71,6 +73,8 @@ class ReportKennametalPos(ReportBase):
             ],
             filters=supplier_filters,
         )
+        if not supplier_data:
+            return
         supplier = etl.fromdicts(supplier_data)
         if self._debug:
             etl.tocsv(supplier, self.file_name("supplier"))

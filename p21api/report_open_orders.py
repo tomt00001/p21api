@@ -40,6 +40,8 @@ class ReportOpenOrders(ReportBase):
             ],
             order_by=["customer_id asc", "order_no asc", "line_no asc"],
         )
+        if not order_data:
+            return
         order = etl.fromdicts(order_data)
         if self._debug:
             etl.tocsv(order, self.file_name("order"))
@@ -60,6 +62,8 @@ class ReportOpenOrders(ReportBase):
             ],
             filters=[f"({order_no_filters})"],
         )
+        if not order_ack_line_data:
+            return
         order_ack_line = etl.fromdicts(order_ack_line_data)
         if self._debug:
             etl.tocsv(order_ack_line, self.file_name("order_ack_line"))

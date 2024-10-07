@@ -73,7 +73,7 @@ class Config:
         elif isinstance(start_date, datetime):
             self.start_date = start_date
         else:
-            return None
+            self.start_date = self._date_start_of_month(datetime.now())
 
     def set_end_date(self, end_date: str | datetime | None) -> None:
         if end_date and isinstance(end_date, str):
@@ -82,8 +82,6 @@ class Config:
             self.end_date = end_date
         elif not end_date and self.start_date:
             self.end_date = self._date_end_of_month(self.start_date)
-        if not self.end_date:
-            return None
 
     def set_output_folder(self, output_folder: str | None = None) -> None:
         if not output_folder:

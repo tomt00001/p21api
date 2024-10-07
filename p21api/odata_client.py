@@ -49,7 +49,7 @@ class ODataClient:
         else:
             raise Exception(f"Failed to obtain token: {response.text}")
 
-    def fetch_data(self, url: str) -> dict:
+    def fetch_data(self, url: str) -> dict | None:
         """Fetch data from the given endpoint with date filters."""
         headers = {
             **self.headers,
@@ -63,10 +63,7 @@ class ODataClient:
 
         value = data.get("value")
         if not value:
-            raise ValueError(
-                "Value key not found in data response. \
-                            This is an error"
-            )
+            return None
         return value
 
     def _get_endpoint_url(self, endpoint: str) -> str:
@@ -158,7 +155,7 @@ class ODataClient:
         endpoint: str,
         start_date: datetime | None = None,
         **kwargs,
-    ) -> tuple[dict, str]:
+    ) -> tuple[dict | None, str]:
         url = self.compose_url(
             endpoint=endpoint,
             start_date=start_date,
@@ -174,7 +171,7 @@ class ODataClient:
         start_date: datetime | None = None,
         page_size: int = 1000,
         **kwargs,
-    ) -> dict:
+    ) -> dict | None:
         body = {}
         url = self._get_endpoint_url(endpoint)
         headers = self.get_headers()
@@ -203,6 +200,8 @@ class ODataClient:
                 raise Exception(f"Failed to fetch data: {response.text}")
 
             value = response.json().get("value")
+            if not value:
+                return None
             data = data + value
 
             max_count = response.json().get("@odata.count")

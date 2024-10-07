@@ -26,6 +26,8 @@ class ReportDailySales(ReportBase):
             ],
             order_by=["year_for_period asc", "invoice_no asc"],
         )
+        if not invoice_data:
+            return
         invoice = etl.fromdicts(invoice_data)
         etl.tocsv(
             invoice,

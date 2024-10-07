@@ -32,6 +32,8 @@ class ReportJarp(ReportBase):
             ],
             order_by=["invoice_date asc"],
         )
+        if not invoice_data:
+            return
         invoice_pre = etl.fromdicts(invoice_data)
         invoice = etl.select(
             invoice_pre,
@@ -63,6 +65,8 @@ class ReportJarp(ReportBase):
             ],
             filters=[f"({invoice_ids_filter})"],
         )
+        if not invoice_line_data:
+            return
         invoice_line = etl.fromdicts(invoice_line_data)
         if self._debug:
             etl.tocsv(invoice_line, self.file_name("invoice_line"))
@@ -82,6 +86,8 @@ class ReportJarp(ReportBase):
             ],
             filters=[f"({invoice_ids_filter})"],
         )
+        if not sales_history_data:
+            return
         sales_history = etl.fromdicts(sales_history_data)
         if self._debug:
             etl.tocsv(sales_history, self.file_name("sales_history"))
