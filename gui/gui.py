@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime
 
+from p21api.config import Config
 from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import (
     QApplication,
@@ -13,8 +14,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-
-from p21api.config import Config
 
 
 class DatePickerDialog(QDialog):

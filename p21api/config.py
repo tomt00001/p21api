@@ -16,7 +16,7 @@ class Config:
         start_date: str | datetime | None = None,
         end_date: str | datetime | None = None,
         debug: bool | str | None = False,
-        show_gui: bool | None = None,
+        show_gui: bool | str | None = None,
     ) -> None:
         if not (base_url := getenv("BASE_URL")):
             raise ValueError(
@@ -31,18 +31,21 @@ class Config:
         self.set_end_date(end_date)
 
         self.show_gui = False
+        if show_gui and isinstance(show_gui, bool):
+            self.show_gui = show_gui
+        if not show_gui:
+            show_gui = getenv("SHOW_GUI")
         if show_gui and isinstance(show_gui, str):
             self.show_gui = show_gui == "True"
-        elif show_gui and isinstance(show_gui, bool):
-            self.show_gui = show_gui
         elif not show_gui and not self.start_date:
             self.show_gui = True
 
         self.debug = False
         if debug and isinstance(debug, bool):
             self.debug = debug
-        elif debug and isinstance(debug, str):
+        if not debug:
             debug = getenv("DEBUG")
+        elif debug and isinstance(debug, str):
             if debug and debug == "True":
                 self.debug = True
 
@@ -133,7 +136,9 @@ class Config:
 
     @property
     def should_show_gui(self) -> bool:
-        return self.show_gui or not self.has_login or not self.start_date
+        if self.show_gui:
+            return True
+        return not self.has_login or not self.start_date
 
     @property
     def gui_defaults(self) -> dict:
