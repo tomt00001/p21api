@@ -16,7 +16,7 @@ class Config:
         start_date: str | datetime | None = None,
         end_date: str | datetime | None = None,
         debug: bool | str | None = False,
-        show_gui: bool = True,
+        show_gui: bool | None = None,
     ) -> None:
         if not (base_url := getenv("BASE_URL")):
             raise ValueError(
@@ -68,14 +68,18 @@ class Config:
             self.password = getenv("APIPASSWORD")
 
     def set_start_date(self, start_date: str | datetime | None) -> None:
-        if isinstance(start_date, str):
+        if not start_date:
+            start_date = getenv("START_DATE")
+        if start_date and isinstance(start_date, str):
             self.start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        elif isinstance(start_date, datetime):
+        elif start_date and isinstance(start_date, datetime):
             self.start_date = start_date
         else:
             self.start_date = self._date_start_of_month(datetime.now())
 
     def set_end_date(self, end_date: str | datetime | None) -> None:
+        if not end_date:
+            end_date = getenv("END_DATE")
         if end_date and isinstance(end_date, str):
             self.end_date = datetime.strptime(end_date, "%Y-%m-%d")
         elif end_date and isinstance(end_date, datetime):
@@ -85,10 +89,12 @@ class Config:
 
     def set_output_folder(self, output_folder: str | None = None) -> None:
         if not output_folder:
-            self.output_folder = "./output/"
-        else:
+            output_folder = getenv("OUTPUT_FOLDER")
+        if output_folder and isinstance(output_folder, str):
             self.output_folder = output_folder
-
+        elif not output_folder:
+            self.output_folder = "./output/"
+        self.output_folder = self.output_folder.replace("\\", "/").rstrip("/") + "/"
         Path(self.output_folder).mkdir(parents=True, exist_ok=True)
 
     def from_gui_input(

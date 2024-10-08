@@ -15,7 +15,7 @@ def main():
     if config.debug:
         print("*** Debug mode ***")
 
-    if True:
+    if config.should_show_gui:
         data, save_clicked = show_date_picker_dialog(config=config)
         if not save_clicked or not data:
             return
