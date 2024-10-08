@@ -29,7 +29,7 @@ class DatePickerDialog(QDialog):
         super().__init__(parent)
 
         # Set dialog title and size
-        self.setWindowTitle("P21 Date Export Configuration")
+        self.setWindowTitle("P21 Data Export Configuration")
         self.setGeometry(100, 100, 300, 200)
 
         # Create the layout
