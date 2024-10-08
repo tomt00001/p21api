@@ -6,7 +6,7 @@ authors = ["tomt00001 <107521427+tomt00001@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.14"
+python = ">=3.12,<3.14"
 requests = "^2.32.3"
 petl = "^1.7.15"
 python-dotenv = "^1.0.1"
