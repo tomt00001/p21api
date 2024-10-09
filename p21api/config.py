@@ -1,6 +1,6 @@
 import calendar
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from os import getenv
 from pathlib import Path
 
@@ -77,6 +77,8 @@ class Config:
             self.start_date = datetime.strptime(start_date, "%Y-%m-%d")
         elif start_date and isinstance(start_date, datetime):
             self.start_date = start_date
+        elif start_date and isinstance(start_date, date):
+            self.start_date = datetime.combine(start_date, datetime.min.time())
         else:
             self.start_date = self._date_start_of_month(datetime.now())
 
@@ -87,6 +89,8 @@ class Config:
             self.end_date = datetime.strptime(end_date, "%Y-%m-%d")
         elif end_date and isinstance(end_date, datetime):
             self.end_date = end_date
+        elif end_date and isinstance(end_date, date):
+            self.end_date = datetime.combine(end_date, datetime.min.time())
         elif not end_date and self.start_date:
             self.end_date = self._date_end_of_month(self.start_date)
 
