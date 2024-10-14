@@ -25,10 +25,10 @@ class ReportJarp(ReportBase):
                 "total_amount",
                 "year_for_period",
                 "ship_to_id",
+                "salesrep_id",
             ],
             filters=[
                 "(ship_to_id eq 12755 or ship_to_id eq 15097)",
-                # "not startswith(po_no, 'P')",
             ],
             order_by=["invoice_date asc"],
         )
@@ -112,9 +112,9 @@ class ReportJarp(ReportBase):
         sales_supplier_joined = etl.join(
             sales_history,
             supplier,
-            lkey=("inv_mast_uid", "supplier_id", "item_id"),  # Keys in sales_history
+            lkey=("inv_mast_uid", "supplier_id", "item_id"),
             rkey=("inv_mast_uid", "supplier_id", "item_id"),
-        )  # Keys in supplier
+        )
 
         # Step 2: Join the result with invoice_hdr on invoice_no
         invoice_sales_joined = etl.join(
@@ -137,9 +137,16 @@ class ReportJarp(ReportBase):
             final_join, "{line_no} == {line_no}"
         )  # Adjust according to your needs
 
+        # Add a new 'week_in_month' column to the table
+        with_week_column = etl.addfield(
+            final_join,
+            "week_in_month",
+            lambda row: self.get_week_in_month(row["invoice_date"]),
+        )
+
         # Step 5: Select the desired columns
         selected_columns = etl.cut(
-            final_join,
+            with_week_column,
             "bill2_name",
             "invoice_date",
             "invoice_no",
@@ -152,7 +159,11 @@ class ReportJarp(ReportBase):
             "item_desc",
             "item_id",
             "unit_price",
+            "salesrep_id",
+            "week_in_month",
         )
 
+        sorted_table = etl.sort(selected_columns, "week_in_month")
+
         # Step 6: Output the result to a CSV file
-        etl.tocsv(selected_columns, self.file_name("report"))
+        etl.tocsv(sorted_table, self.file_name("report"))

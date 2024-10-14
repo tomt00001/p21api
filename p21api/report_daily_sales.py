@@ -1,4 +1,3 @@
-
 import petl as etl
 
 from .report_base import ReportBase
@@ -23,6 +22,7 @@ class ReportDailySales(ReportBase):
                 "tax_amount",
                 "total_amount",
                 "year_for_period",
+                "salesrep_id",
             ],
             order_by=["year_for_period asc", "invoice_no asc"],
         )
