@@ -23,6 +23,7 @@ class ReportMonthlyConsolidation(ReportBase):
                 "tax_amount",
                 "total_amount",
                 "year_for_period",
+                "salesrep_id",
             ],
             filters=["consolidated eq 'Y'"],
             order_by=["year_for_period asc", "invoice_no asc"],
