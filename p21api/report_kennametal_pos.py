@@ -38,6 +38,7 @@ class ReportKennametalPos(ReportBase):
                 "supplier_id",
                 "unit_price",
                 "year_for_period",
+                "salesrep_id",
             ],
             filters=filters,
         )
@@ -97,8 +98,15 @@ class ReportKennametalPos(ReportBase):
         if self._debug:
             etl.tocsv(supplier, self.file_name("final_joined"))
 
-        selected_columns = etl.cut(
+        # Add a new 'week_in_month' column to the table
+        with_week_column = etl.addfield(
             final_join,
+            "week_in_month",
+            lambda row: self.get_week_in_month(row["invoice_date"]),
+        )
+
+        selected_columns = etl.cut(
+            with_week_column,
             "bill2_country",
             "cogs_amount",
             "invoice_date",
@@ -116,6 +124,10 @@ class ReportKennametalPos(ReportBase):
             "state_excise_tax_exemption_no",
             "cost",
             "item_id",
+            "salesrep_id",
+            "week_in_month",
         )
 
-        etl.tocsv(selected_columns, self.file_name("report"))
+        sorted_table = etl.sort(selected_columns, "week_in_month")
+
+        etl.tocsv(sorted_table, self.file_name("report"))
