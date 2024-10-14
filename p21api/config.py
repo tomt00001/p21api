@@ -10,6 +10,7 @@ class Config:
     def __init__(
         self,
         output_folder: str | None = None,
+        report_group: str | None = None,
         base_url: str | None = None,
         username: str | None = None,
         password: str | None = None,
@@ -25,6 +26,7 @@ class Config:
         self.base_url = base_url
 
         self.set_output_folder(output_folder)
+        self.set_report_group(report_group)
         self.set_username(username)
         self.set_password(password)
         self.set_start_date(start_date)
@@ -101,8 +103,17 @@ class Config:
             self.output_folder = output_folder
         elif not output_folder:
             self.output_folder = "./output/"
-        self.output_folder = self.output_folder.replace("\\", "/").rstrip("/") + "/"
+        output_folder = self.output_folder.replace("\\", "/").rstrip("/")
+        self.output_folder = f"{output_folder}//"
         Path(self.output_folder).mkdir(parents=True, exist_ok=True)
+
+    def set_report_group(self, report_group: str | None) -> None:
+        if not report_group:
+            report_group = getenv("REPORT_GROUP")
+        if report_group and isinstance(report_group, str):
+            self.report_group = report_group
+        elif not report_group:
+            self.report_group = "monthly"
 
     def from_gui_input(
         self,

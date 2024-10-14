@@ -12,14 +12,17 @@ from .report_open_orders import ReportOpenOrders
 
 
 def do_reports(client: "ODataClient", config: Config) -> None:
-    report_classes: list[Type[ReportBase]] = [
-        ReportKennametalPos,
-        ReportDailySales,
-        ReportOpenOrders,
-        ReportMonthlyInvoices,
-        ReportMonthlyConsolidation,
-        ReportJarp,
-    ]
-    for report_class in report_classes:
+    report_groups: dict[str, list[Type[ReportBase]]] = {
+        "monthly": [
+            ReportKennametalPos,
+            ReportDailySales,
+            ReportOpenOrders,
+            ReportMonthlyInvoices,
+            ReportMonthlyConsolidation,
+            ReportJarp,
+        ],
+        "inventory": [],
+    }
+    for report_class in report_groups.get(config.report_group, []):
         report = report_class(client=client, config=config)
         report.run()
