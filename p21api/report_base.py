@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from .config import Config
 from .odata_client import ODataClient
+
+if TYPE_CHECKING:
+    from .config import Config
 
 
 class ReportBase(ABC):

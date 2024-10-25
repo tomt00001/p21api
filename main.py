@@ -1,4 +1,3 @@
-
 from dotenv import load_dotenv
 from p21api.config import Config
 from p21api.odata_client import ODataClient
@@ -11,9 +10,6 @@ def main():
     load_dotenv()
 
     config = Config()
-
-    if config.debug:
-        print("*** Debug mode ***")
 
     if config.should_show_gui:
         data, save_clicked = show_date_picker_dialog(config=config)

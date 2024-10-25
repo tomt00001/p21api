@@ -1,9 +1,11 @@
 import calendar
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import requests
 
-from .config import Config
+if TYPE_CHECKING:
+    from .config import Config
 
 
 class ODataClient:

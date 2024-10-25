@@ -4,13 +4,15 @@ from datetime import date, datetime
 from os import getenv
 from pathlib import Path
 
+from .reports import get_reports_list
+
 
 @dataclass
 class Config:
     def __init__(
         self,
         output_folder: str | None = None,
-        report_group: str | None = None,
+        report_groups: str | None = None,
         base_url: str | None = None,
         username: str | None = None,
         password: str | None = None,
@@ -26,7 +28,7 @@ class Config:
         self.base_url = base_url
 
         self.set_output_folder(output_folder)
-        self.set_report_group(report_group)
+        self.set_report_groups(report_groups)
         self.set_username(username)
         self.set_password(password)
         self.set_start_date(start_date)
@@ -103,17 +105,16 @@ class Config:
             self.output_folder = output_folder
         elif not output_folder:
             self.output_folder = "./output/"
-        output_folder = self.output_folder.replace("\\", "/").rstrip("/")
-        self.output_folder = f"{output_folder}//"
+        self.output_folder = f"{self.output_folder.replace("\\", "/").rstrip("/")}//"
         Path(self.output_folder).mkdir(parents=True, exist_ok=True)
 
-    def set_report_group(self, report_group: str | None) -> None:
-        if not report_group:
-            report_group = getenv("REPORT_GROUP")
-        if report_group and isinstance(report_group, str):
-            self.report_group = report_group
-        elif not report_group:
-            self.report_group = "monthly"
+    def set_report_groups(self, report_groups: str | None) -> None:
+        if not report_groups:
+            report_groups = getenv("REPORT_GROUPS")
+        if report_groups and isinstance(report_groups, str):
+            self.report_groups = [item.strip() for item in report_groups.split(",")]
+        elif not report_groups:
+            self.report_groups = ["monthly"]
 
     def from_gui_input(
         self,
@@ -134,6 +135,10 @@ class Config:
         output_folder = input_data.get("output_folder")
         if output_folder and isinstance(output_folder, str):
             self.set_output_folder(output_folder)
+
+        reports = input_data.get("reports")
+        if reports and isinstance(reports, list):
+            self.set_report_groups(",".join(reports))
 
     def _date_start_of_month(self, input_date: datetime) -> datetime:
         return datetime(input_date.year, input_date.month, 1)
@@ -156,16 +161,5 @@ class Config:
         return not self.has_login or not self.start_date
 
     @property
-    def gui_defaults(self) -> dict:
-        data = {}
-        if self.start_date:
-            data["start_date"] = self.start_date
-        if self.end_date:
-            data["end_date"] = self.end_date
-        if self.username:
-            data["username"] = self.username
-        if self.password:
-            data["password"] = self.password
-        if self.output_folder:
-            data["output_folder"] = self.output_folder
-        return data
+    def reports(self) -> list[str]:
+        return get_reports_list()
