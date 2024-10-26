@@ -18,6 +18,7 @@ class ODataClient:
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
+
         self.token = self.get_bearer_token(
             self.config.username,
             self.config.password,
@@ -112,8 +113,6 @@ class ODataClient:
             filter_params = self._get_startdate_filter(start_date) or []
 
         filters = kwargs.get("filters")
-        if self.config.debug:
-            print(f"type: {type(filters)} filters: {filters}")
         if filters:
             filter_params.extend(filters)
         url_params.append(self._get_filters(filter_params))
@@ -123,8 +122,6 @@ class ODataClient:
             url_params.append(self._get_order_by(order_by))
 
         final_url = f"{url}?{'&'.join(url_params)}"
-        if self.config.debug:
-            print(f"url: {final_url}")
         return final_url
 
     def get_datetime_filter(
@@ -186,9 +183,6 @@ class ODataClient:
         )
         url = f"{url}&$count=true&$top={page_size}"
 
-        if self.config.debug:
-            print(f"url: {url}")
-
         max_count = 0
         count = 0
         data = []
@@ -208,8 +202,6 @@ class ODataClient:
 
             max_count = response.json().get("@odata.count")
             count += page_size
-            if self.config.debug:
-                print(f"count: {count} max_count: {max_count}")
 
             if count > max_count:
                 break
