@@ -21,6 +21,7 @@ class Config:
         debug: bool | str | None = False,
         show_gui: bool | str | None = None,
     ) -> None:
+        self.now = datetime.now()
         if not (base_url := getenv("BASE_URL")):
             raise ValueError(
                 "Base URL in environment variables is missing. Exiting.",
@@ -84,7 +85,7 @@ class Config:
         elif start_date and isinstance(start_date, date):
             self.start_date = datetime.combine(start_date, datetime.min.time())
         else:
-            self.start_date = self._date_start_of_month(datetime.now())
+            self.start_date = self._date_start_of_month(self.now)
 
     def set_end_date(self, end_date: str | datetime | None) -> None:
         if not end_date:
