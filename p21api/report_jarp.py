@@ -128,42 +128,28 @@ class ReportJarp(ReportBase):
         final_join = etl.join(
             invoice_sales_joined,
             invoice_line,
-            lkey="invoice_no",  # Key in invoice_sales_joined
-            rkey="invoice_no",
-        )  # Key in invoice_line
-
-        # Step 4: Filter based on line_no
-        final_join = etl.select(
-            final_join, "{line_no} == {line_no}"
-        )  # Adjust according to your needs
-
-        # Add a new 'week_in_month' column to the table
-        with_week_column = etl.addfield(
-            final_join,
-            "week_in_month",
-            lambda row: self.get_week_in_month(row["invoice_date"]),
+            lkey=("invoice_no", "line_no"),
+            rkey=("invoice_no", "line_no"),
         )
 
-        # Step 5: Select the desired columns
+        # Step 4: Select the desired columns
         selected_columns = etl.cut(
-            with_week_column,
+            final_join,
             "bill2_name",
+            "ship2_address1",
             "invoice_date",
             "invoice_no",
-            "po_no",
-            "ship2_address1",
-            "customer_part_number",
-            "extended_price",
+            "item_id",
+            "item_desc",
             "qty_requested",
             "qty_shipped",
-            "item_desc",
-            "item_id",
             "unit_price",
-            "salesrep_id",
-            "week_in_month",
+            "extended_price",
+            "customer_part_number",
+            "po_no",
         )
 
-        sorted_table = etl.sort(selected_columns, "week_in_month")
+        sorted_table = etl.sort(selected_columns, "invoice_date")
 
         # Step 6: Output the result to a CSV file
         etl.tocsv(sorted_table, self.file_name("report"))
