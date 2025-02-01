@@ -1,3 +1,3 @@
-from .gui import show_date_picker_dialog
+from .gui import show_gui_dialog
 
-__all__ = ["show_date_picker_dialog"]
+__all__ = ["show_gui_dialog"]

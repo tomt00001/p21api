@@ -1,166 +1,117 @@
-import calendar
-from dataclasses import dataclass
+import os
 from datetime import date, datetime
-from os import getenv
 from pathlib import Path
+from typing import Type
 
-from .reports import get_reports_list
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
+
+from .report_base import ReportBase
+from .report_daily_sales import ReportDailySales
+from .report_inventory import ReportInventory
+from .report_jarp import ReportJarp
+from .report_kennametal_pos import ReportKennametalPos
+from .report_monthly_consolidation import ReportMonthlyConsolidation
+from .report_monthly_invoices import ReportMonthlyInvoices
+from .report_open_orders import ReportOpenOrders
+from .report_open_po import ReportOpenPO
 
 
-@dataclass
-class Config:
-    def __init__(
-        self,
-        output_folder: str | None = None,
-        report_groups: str | None = None,
-        base_url: str | None = None,
-        username: str | None = None,
-        password: str | None = None,
-        start_date: str | datetime | None = None,
-        end_date: str | datetime | None = None,
-        debug: bool | str | None = False,
-        show_gui: bool | str | None = None,
-    ) -> None:
-        self.now = datetime.now()
-        if not (base_url := getenv("BASE_URL")):
-            raise ValueError(
-                "Base URL in environment variables is missing. Exiting.",
-            )
-        self.base_url = base_url
+class Config(BaseSettings):
+    base_url: str = Field(default="", validation_alias="BASE_URL")
+    username: str | None = Field(default=None, validation_alias="APIUSERNAME")
+    password: str | None = Field(default=None, validation_alias="APIPASSWORD")
+    output_folder: str = Field(default="./output/", validation_alias="OUTPUT_FOLDER")
+    report_groups: list[str] = Field(
+        default_factory=lambda: ["monthly"], validation_alias="REPORT_GROUPS"
+    )
+    debug: bool = Field(default=False, validation_alias="DEBUG")
+    show_gui: bool = Field(default=False, validation_alias="SHOW_GUI")
+    start_date: datetime | None = Field(default=None, validation_alias="START_DATE")
+    end_date: datetime | None = Field(default=None, validation_alias="END_DATE")
 
-        self.set_output_folder(output_folder)
-        self.set_report_groups(report_groups)
-        self.set_username(username)
-        self.set_password(password)
-        self.set_start_date(start_date)
-        self.set_end_date(end_date)
+    @field_validator("output_folder", mode="before")
+    @classmethod
+    def normalize_output_folder(cls, value: str) -> str:
+        """Ensure output folder path is properly formatted."""
+        # Normalize path and ensure exactly one trailing slash
+        value = os.path.normpath(value) + os.sep
+        Path(value).mkdir(parents=True, exist_ok=True)
+        return value
 
-        self.show_gui = False
-        if show_gui and isinstance(show_gui, bool):
-            self.show_gui = show_gui
-        if not show_gui:
-            show_gui = getenv("SHOW_GUI")
-        if show_gui and isinstance(show_gui, str):
-            self.show_gui = show_gui == "True"
-        elif not show_gui and not self.start_date:
-            self.show_gui = True
+    @field_validator("start_date", mode="before")
+    @classmethod
+    def parse_start_date(cls, value: str | datetime | date | None) -> datetime:
+        """Parse start_date from environment or default to first day of current month."""
+        if isinstance(value, str):
+            return datetime.strptime(value, "%Y-%m-%d")
+        if isinstance(value, date):
+            return datetime.combine(value, datetime.min.time())
+        return datetime(datetime.now().year, datetime.now().month, 1)
 
-        self.debug = False
-        if debug and isinstance(debug, bool):
-            self.debug = debug
-        if not debug:
-            debug = getenv("DEBUG")
-        elif debug and isinstance(debug, str):
-            if debug and debug == "True":
-                self.debug = True
+    @field_validator("end_date", mode="before")
+    @classmethod
+    def parse_end_date(cls, value: str | datetime | date | None, values) -> datetime:
+        """Parse end_date or default to the last day of the start_date's month."""
+        if isinstance(value, str):
+            return datetime.strptime(value, "%Y-%m-%d")
+        if isinstance(value, date):
+            return datetime.combine(value, datetime.min.time())
+        start_date = values.data.get("start_date") or datetime.now()
+        return cls._date_start_of_next_month(start_date)
 
-    base_url: str
-    username: str | None
-    password: str | None
-    start_date: datetime
-    end_date: datetime
-    output_folder: str
-    show_gui: bool = True
-    debug: bool = False
-
-    def set_username(self, username: str | None) -> None:
-        if username is not None:
-            self.username = username
-        else:
-            self.username = getenv("APIUSERNAME")
-
-    def set_password(self, password: str | None) -> None:
-        if password is not None:
-            self.password = password
-        else:
-            self.password = getenv("APIPASSWORD")
-
-    def set_start_date(self, start_date: str | datetime | None) -> None:
-        if not start_date:
-            start_date = getenv("START_DATE")
-        if start_date and isinstance(start_date, str):
-            self.start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        elif start_date and isinstance(start_date, datetime):
-            self.start_date = start_date
-        elif start_date and isinstance(start_date, date):
-            self.start_date = datetime.combine(start_date, datetime.min.time())
-        else:
-            self.start_date = self._date_start_of_month(self.now)
-
-    def set_end_date(self, end_date: str | datetime | None) -> None:
-        if not end_date:
-            end_date = getenv("END_DATE")
-        if end_date and isinstance(end_date, str):
-            self.end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        elif end_date and isinstance(end_date, datetime):
-            self.end_date = end_date
-        elif end_date and isinstance(end_date, date):
-            self.end_date = datetime.combine(end_date, datetime.min.time())
-        elif not end_date and self.start_date:
-            self.end_date = self._date_end_of_month(self.start_date)
-
-    def set_output_folder(self, output_folder: str | None = None) -> None:
-        if not output_folder:
-            output_folder = getenv("OUTPUT_FOLDER")
-        if output_folder and isinstance(output_folder, str):
-            self.output_folder = output_folder
-        elif not output_folder:
-            self.output_folder = "./output/"
-        self.output_folder = f"{self.output_folder.replace("\\", "/").rstrip("/")}//"
-        Path(self.output_folder).mkdir(parents=True, exist_ok=True)
-
-    def set_report_groups(self, report_groups: str | None) -> None:
-        if not report_groups:
-            report_groups = getenv("REPORT_GROUPS")
-        if report_groups and isinstance(report_groups, str):
-            self.report_groups = [item.strip() for item in report_groups.split(",")]
-        elif not report_groups:
-            self.report_groups = ["monthly"]
-
-    def from_gui_input(
-        self,
-        input_data: dict[str, str | datetime | None],
-    ) -> None:
-        if start_date := input_data.get("start_date"):
-            self.set_start_date(start_date)
-        if end_date := input_data.get("end_date"):
-            self.set_end_date(end_date)
-
-        username = input_data.get("username")
-        if username and isinstance(username, str):
-            self.set_username(username)
-        password = input_data.get("password")
-        if password and isinstance(password, str):
-            self.set_password(password)
-
-        output_folder = input_data.get("output_folder")
-        if output_folder and isinstance(output_folder, str):
-            self.set_output_folder(output_folder)
-
-        reports = input_data.get("reports")
-        if reports and isinstance(reports, list):
-            self.set_report_groups(",".join(reports))
-
-    def _date_start_of_month(self, input_date: datetime) -> datetime:
-        return datetime(input_date.year, input_date.month, 1)
-
-    def _date_end_of_month(self, input_date: datetime) -> datetime:
-        last_day_of_month = calendar.monthrange(
-            input_date.year,
-            input_date.month,
-        )[1]
-        return input_date.replace(day=last_day_of_month)
+    @staticmethod
+    def _date_start_of_next_month(input_date: datetime) -> datetime:
+        """Return midnight of the first day of the next month."""
+        year, month = input_date.year, input_date.month
+        if month == 12:
+            return datetime(year + 1, 1, 1)
+        return datetime(year, month + 1, 1)
 
     @property
     def has_login(self) -> bool:
-        return self.username is not None and self.password is not None
+        """Check if login credentials are provided."""
+        return bool(self.username and self.password)
 
     @property
     def should_show_gui(self) -> bool:
-        if self.show_gui:
-            return True
-        return not self.has_login or not self.start_date
+        """Determine whether the GUI should be shown."""
+        for condition in [self.show_gui, not self.has_login, not self.start_date]:
+            if condition:
+                return True
+        return False
 
-    @property
-    def reports(self) -> list[str]:
-        return get_reports_list()
+    @classmethod
+    def from_gui_input(cls, data: dict) -> "Config":
+        """Create a Config instance from GUI input data without overriding defaults."""
+        return cls.model_construct(**data)
+
+    model_config = {
+        "env_prefix": "",  # No prefix for environment variables
+        "env_file": ".env",  # Load environment variables from .env file
+        "env_file_encoding": "utf-8",
+        "extra": "allow",  # Allow extra fields in environment variables
+    }
+
+    @staticmethod
+    def get_report_groups() -> dict[str, list[Type[ReportBase]]]:
+        return {
+            "monthly": [
+                ReportKennametalPos,
+                ReportDailySales,
+                ReportOpenOrders,
+                ReportMonthlyInvoices,
+                ReportMonthlyConsolidation,
+                ReportJarp,
+            ],
+            "inventory": [
+                ReportInventory,
+            ],
+            "po": [
+                ReportOpenPO,
+            ],
+        }
+
+    @staticmethod
+    def get_reports_list() -> list[str]:
+        return list(Config.get_report_groups().keys())

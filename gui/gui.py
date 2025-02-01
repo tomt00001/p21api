@@ -106,7 +106,7 @@ class DatePickerDialog(QDialog):
         )
 
         # Populate the reports list from config
-        self.populate_reports(config.reports, config.report_groups)
+        self.populate_reports(config.get_reports_list(), config.report_groups)
 
         report_layout.addWidget(self.reports_list)
         report_group.setLayout(report_layout)
@@ -181,7 +181,7 @@ class DatePickerDialog(QDialog):
         return [item.text() for item in self.reports_list.selectedItems()]
 
 
-def show_date_picker_dialog(
+def show_gui_dialog(
     config: "Config",
 ) -> tuple[dict[str, datetime | str | None] | None, bool]:
     _ = QApplication(sys.argv)  # Initialize the QApplication
