@@ -1,9 +1,9 @@
 import os
 from datetime import date, datetime
 from pathlib import Path
-from typing import Type
+from typing import Any, Dict, Type
 
-from pydantic import Field, field_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
@@ -18,23 +18,23 @@ from .report_open_po import ReportOpenPO
 
 
 class Config(BaseSettings):
-    base_url: str = Field(default="", validation_alias="BASE_URL")
-    username: str | None = Field(default=None, validation_alias="APIUSERNAME")
-    password: str | None = Field(default=None, validation_alias="APIPASSWORD")
-    output_folder: str = Field(default="./output/", validation_alias="OUTPUT_FOLDER")
-    report_groups: list[str] = Field(
-        default_factory=lambda: ["monthly"], validation_alias="REPORT_GROUPS"
+    base_url: str = Field(
+        default="https://christensenmachinery.epicordistribution.com",
+        validation_alias="BASE_URL",
     )
-    debug: bool = Field(default=False, validation_alias="DEBUG")
-    show_gui: bool = Field(default=False, validation_alias="SHOW_GUI")
-    start_date: datetime | None = Field(default=None, validation_alias="START_DATE")
-    end_date: datetime | None = Field(default=None, validation_alias="END_DATE")
+    username: str | None = Field(default=None)
+    password: str | None = Field(default=None)
+    output_folder: str = Field(default="output\\")
+    report_groups: list[str] = Field(default_factory=lambda: ["monthly"])
+    debug: bool = Field(default=False)
+    show_gui: bool = Field(default=False)
+    start_date: datetime | None = Field(default=None)
+    end_date_: datetime | None = Field(default=None)
 
     @field_validator("output_folder", mode="before")
     @classmethod
     def normalize_output_folder(cls, value: str) -> str:
         """Ensure output folder path is properly formatted."""
-        # Normalize path and ensure exactly one trailing slash
         value = os.path.normpath(value) + os.sep
         Path(value).mkdir(parents=True, exist_ok=True)
         return value
@@ -51,14 +51,30 @@ class Config(BaseSettings):
 
     @field_validator("end_date", mode="before")
     @classmethod
-    def parse_end_date(cls, value: str | datetime | date | None, values) -> datetime:
+    def parse_end_date(
+        cls, value: str | datetime | date | None, values
+    ) -> datetime | None:
         """Parse end_date or default to the last day of the start_date's month."""
         if isinstance(value, str):
             return datetime.strptime(value, "%Y-%m-%d")
         if isinstance(value, date):
-            return datetime.combine(value, datetime.min.time())
-        start_date = values.data.get("start_date") or datetime.now()
-        return cls._date_start_of_next_month(start_date)
+            return datetime.combine(value, datetime.max.time())
+
+    @model_validator(mode="before")
+    def set_end_date_if_not_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        start_date = cls.parse_start_date(values.get("start_date"))
+        if not values.get("end_date") and start_date:
+            values["end_date"] = cls._date_start_of_next_month(start_date)
+        return values
+
+    @computed_field
+    @property
+    def end_date(self) -> datetime:
+        if not self.end_date_ and self.start_date:
+            return self._date_start_of_next_month(self.start_date)
+        if not self.end_date_:
+            raise ValueError("End date is required")
+        return self.end_date_
 
     @staticmethod
     def _date_start_of_next_month(input_date: datetime) -> datetime:
@@ -68,6 +84,19 @@ class Config(BaseSettings):
             return datetime(year + 1, 1, 1)
         return datetime(year, month + 1, 1)
 
+    model_config = {
+        "env_prefix": "",  # No prefix for environment variables
+        "env_file": ".env",  # Load environment variables from .env file
+        "env_file_encoding": "utf-8",
+        "extra": "allow",  # Allow extra fields in environment variables
+        "case_sensitive": True,
+    }
+
+    @classmethod
+    def from_gui_input(cls, data: dict) -> "Config":
+        """Create a Config instance from GUI input data without overriding defaults."""
+        return cls.model_construct(**data)
+
     @property
     def has_login(self) -> bool:
         """Check if login credentials are provided."""
@@ -75,23 +104,10 @@ class Config(BaseSettings):
 
     @property
     def should_show_gui(self) -> bool:
-        """Determine whether the GUI should be shown."""
-        for condition in [self.show_gui, not self.has_login, not self.start_date]:
+        for condition in [self.show_gui, not self.has_login]:
             if condition:
                 return True
         return False
-
-    @classmethod
-    def from_gui_input(cls, data: dict) -> "Config":
-        """Create a Config instance from GUI input data without overriding defaults."""
-        return cls.model_construct(**data)
-
-    model_config = {
-        "env_prefix": "",  # No prefix for environment variables
-        "env_file": ".env",  # Load environment variables from .env file
-        "env_file_encoding": "utf-8",
-        "extra": "allow",  # Allow extra fields in environment variables
-    }
 
     @staticmethod
     def get_report_groups() -> dict[str, list[Type[ReportBase]]]:
