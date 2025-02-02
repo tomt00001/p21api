@@ -8,7 +8,7 @@ class ReportInventory(ReportBase):
     def file_name_prefix(self) -> str:
         return "inventory_"
 
-    def run(self) -> None:
+    def _run(self) -> None:
         stockstatus_data, url = self._client.query_odataservice(
             "p21_view_stockstatus_report",
             selects=[
