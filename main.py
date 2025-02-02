@@ -14,13 +14,17 @@ def main():
         merged_data = {**config.model_dump(), **data}
         config = Config.from_gui_input(merged_data)
 
-    assert config.base_url, "Base URL is required"
-    assert config.start_date, "Start date is required"
-
     if not config.has_login:
         raise ValueError("Username and password are required")
 
-    client = ODataClient(config=config)
+    assert config.base_url, "Base URL is required"
+    assert config.username, "Username is required"
+    assert config.password, "Password is required"
+    assert config.start_date, "Start date is required"
+
+    client = ODataClient(
+        username=config.username, password=config.password, base_url=config.base_url
+    )
 
     # Get the classes of each report in each report group
     report_groups = config.get_report_groups()
