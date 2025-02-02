@@ -18,7 +18,17 @@ def do_reports(
         for report in report_group or []
     ]
 
+    if config.start_date is None:
+        raise ValueError("Start date is required")
+
     # Run each report from the list of classes
     for report_class in report_classes:
-        report = report_class(client=client, config=config)
+        report = report_class(
+            client=client,
+            start_date=config.start_date,
+            end_date=config.end_date,
+            output_folder=config.output_folder,
+            debug=config.debug,
+            config=config,
+        )
         report.run()
