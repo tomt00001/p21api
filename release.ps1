@@ -12,7 +12,7 @@ if ($confirmation -eq "yes") {
     git push origin $newTag
 
     # Paths to your files
-    $filePaths = @("dist/P21 Data Exporter.exe", "dist/.env")
+    $filePaths = @("dist/P21 Data Exporter.exe")
 
     # Create a release with the new tag
     gh release create $newTag $filePaths --title "Release $newTag" --notes "Release created on $(Get-Date -Format yyyy-MM-dd)" --prerelease

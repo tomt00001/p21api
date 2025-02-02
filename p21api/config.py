@@ -18,10 +18,7 @@ from .report_open_po import ReportOpenPO
 
 
 class Config(BaseSettings):
-    base_url: str = Field(
-        default="https://christensenmachinery.epicordistribution.com",
-        validation_alias="BASE_URL",
-    )
+    base_url: str = Field(default="https://christensenmachinery.epicordistribution.com")
     username: str | None = Field(default=None)
     password: str | None = Field(default=None)
     output_folder: str = Field(default="output\\")
@@ -86,7 +83,7 @@ class Config(BaseSettings):
 
     model_config = {
         "env_prefix": "",  # No prefix for environment variables
-        "env_file": ".env",  # Load environment variables from .env file
+        "env_file": "env",  # Load environment variables from .env file
         "env_file_encoding": "utf-8",
         "extra": "allow",  # Allow extra fields in environment variables
         "case_sensitive": True,

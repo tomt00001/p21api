@@ -2,16 +2,8 @@ ruff_cache/*
 
 # Ignore local develop environments
 .venv
-.direnv
-dev-profile*
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-dev-profile*
+env
+
 
 # IDE Configurations
 .vscode

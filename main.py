@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 from p21api.config import Config
 from p21api.odata_client import ODataClient
 from p21api.reports import do_reports
@@ -7,8 +6,6 @@ from gui import show_gui_dialog
 
 
 def main():
-    load_dotenv()
-
     config = Config()
 
     if config.should_show_gui:
@@ -20,9 +17,6 @@ def main():
 
     if not config.has_login:
         raise ValueError("Username and password are required")
-
-    if not config.start_date:
-        raise ValueError("Start date is required")
 
     client = ODataClient(config=config)
 
