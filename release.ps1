@@ -20,7 +20,7 @@ if ($pr_number) {
     Write-Output "Merging PR #$pr_number"
     
     # Merge the pull request
-    gh pr merge $pr_number --merge --delete-branch
+    gh pr merge $pr_number --merge
 
     # Checkout main and pull latest changes
     git checkout main
@@ -29,30 +29,33 @@ if ($pr_number) {
     Write-Output "No open PR found. Please check manually."
 }
 
-# # Ask for confirmation before running build
-# $confirmation = Read-Host "Do you want to run build first? (yes/no)"
+# Ask for confirmation before running build
+$confirmation = Read-Host "Do you want to run build first? (yes/no)"
 
-# if ($confirmation -eq "yes") {
-#     # Run the build script
-#     .\build.ps1
-# }
+if ($confirmation -eq "yes") {
+    # Run the build script
+    .\build.ps1
+}
 
-# Ask for confirmation before switching to the main branch
-# $confirmation = Read-Host "Do you want to switch to the 'main' branch and proceed with the release? (yes/no)"
+$confirmation = Read-Host "Do you want to proceed with the release? (yes/no)"
 
-# if ($confirmation -eq "yes") {
-#     # Generate a date-based tag
-#     $newTag = "version-$(Get-Date -Format yyyyMMdd)"
-#     git tag $newTag
-#     git push origin $newTag
+if ($confirmation -eq "yes") {
+    # Generate a date-based tag
+    $newTag = "version-$(Get-Date -Format yyyyMMdd)"
+    git tag $newTag
+    git push origin $newTag
 
-#     # Paths to your files
-#     $filePaths = @("dist/P21 Data Exporter.exe")
+    # Paths to your files
+    $filePaths = @("dist/P21 Data Exporter.exe")
 
-#     # Create a release with the new tag
-#     gh release create $newTag $filePaths --title "Release $newTag" --notes "Release created on $(Get-Date -Format yyyy-MM-dd)" --prerelease
+    # Create a release with the new tag
+    gh release create $newTag $filePaths --title "Release $newTag" --notes "Release created on $(Get-Date -Format yyyy-MM-dd)" --prerelease
 
-#     Write-Host "Release $newTag created successfully!"
-# } else {
-#     Write-Host "Release creation aborted."
-# }
+    Write-Host "Release $newTag created successfully!"
+} else {
+    Write-Host "Release creation aborted."
+}
+
+git pull origin main
+git checkout develop
+git pull origin main
