@@ -3,6 +3,7 @@ $confirmation = Read-Host "Do you want to switch to the 'main' branch and procee
 
 if ($confirmation -eq "yes") {
     # Make sure main is up to date before creating a new release
+    # TODO this probably needs to merge or creata pull request
     git checkout main
     git pull origin main
 
