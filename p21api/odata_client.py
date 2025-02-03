@@ -1,64 +1,44 @@
 import calendar
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 import requests
 
-if TYPE_CHECKING:
-    from .config import Config
-
 
 class ODataClient:
-    def __init__(
-        self,
-        config: "Config",
-    ) -> None:
-        self.config = config
-        self.headers = {
+    def __init__(self, username: str, password: str, base_url: str) -> None:
+        self.username = username
+        self.password = password
+        self.base_url = base_url
+
+        self.headers = self._get_headers()
+
+    def _get_headers(self) -> dict:
+        """Authenticate and get Bearer token."""
+        url = f"{self.base_url}/api/security/token"
+
+        headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
 
-        self.token = self.get_bearer_token(
-            self.config.username,
-            self.config.password,
-        )
-
-    def get_headers(self) -> dict:
-        if not self.token:
-            self.token = self.get_bearer_token(
-                self.config.username, self.config.password
-            )
-        return {
-            **self.headers,
-            "Authorization": f"Bearer {self.token}",
-        }
-
-    def get_bearer_token(self, username: str, password: str) -> str:
-        """Authenticate and get Bearer token."""
-        url = f"{self.config.base_url}/api/security/token"
-
         response = requests.post(
             url,
             headers={
-                **self.headers,
-                "username": username,
-                "password": password,
+                **headers,
+                "username": self.username,
+                "password": self.password,
             },
         )
 
         if response.status_code == 200:
-            return response.json().get("AccessToken")
+            headers["Authorization"] = f"Bearer {response.json().get('AccessToken')}"
+            return headers
         else:
             raise Exception(f"Failed to obtain token: {response.text}")
 
     def fetch_data(self, url: str) -> dict | None:
         """Fetch data from the given endpoint with date filters."""
-        headers = {
-            **self.headers,
-            "Authorization": f"Bearer {self.token}",
-        }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=self.headers)
 
         if response.status_code != 200:
             raise Exception(f"Failed to fetch data: {response.text}")
@@ -70,7 +50,7 @@ class ODataClient:
         return value
 
     def _get_endpoint_url(self, endpoint: str) -> str:
-        return f"{self.config.base_url}/odataservice/odata/view/{endpoint}"
+        return f"{self.base_url}/odataservice/odata/view/{endpoint}"
 
     def _get_selects(self, selects: list[str]) -> str:
         return f"$select={','.join(selects)}"
@@ -140,14 +120,16 @@ class ODataClient:
     def _datetime_to_str(self, input_datetime: datetime) -> str:
         return input_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def get_current_month_end_date(
-        self,
-        input_datetime: datetime,
-    ) -> datetime:
+    def get_current_month_end_date(self, input_datetime: datetime) -> datetime:
+        # Get the last day of the month
         last_day_of_month = calendar.monthrange(
             input_datetime.year, input_datetime.month
         )[1]
-        return input_datetime.replace(day=last_day_of_month)
+
+        # Replace the time portion with the max time (23:59:59.999999)
+        return input_datetime.replace(
+            day=last_day_of_month, hour=23, minute=59, second=59, microsecond=999999
+        )
 
     def query_odataservice(
         self,
@@ -173,7 +155,6 @@ class ODataClient:
     ) -> dict | None:
         body = {}
         url = self._get_endpoint_url(endpoint)
-        headers = self.get_headers()
 
         url = self.compose_url(
             endpoint=endpoint,
@@ -189,7 +170,7 @@ class ODataClient:
         while True:
             response = requests.post(
                 f"{url}&$skip={count}",
-                headers=headers,
+                headers=self.headers,
                 json=body,
             )
             if response.status_code != 200:

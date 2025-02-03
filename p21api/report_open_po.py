@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import petl as etl
 
 from .report_base import ReportBase
@@ -8,8 +10,8 @@ class ReportOpenPO(ReportBase):
     def file_name_prefix(self) -> str:
         return "open_po_"
 
-    def run(self):
-        start_date = self.config.now
+    def _run(self):
+        start_date = datetime.now()
         start_date_str = self._client._datetime_to_str(start_date)
         po_filters = ["complete eq 'N'"]
 

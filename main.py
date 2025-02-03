@@ -1,31 +1,50 @@
-from dotenv import load_dotenv
 from p21api.config import Config
 from p21api.odata_client import ODataClient
-from p21api.reports import do_reports
 
-from gui import show_date_picker_dialog
+from gui import show_gui_dialog
 
 
 def main():
-    load_dotenv()
-
     config = Config()
 
     if config.should_show_gui:
-        data, save_clicked = show_date_picker_dialog(config=config)
+        data, save_clicked = show_gui_dialog(config=config)
         if not save_clicked or not data:
             return
-        config.from_gui_input(data)
+        merged_data = {**config.model_dump(), **data}
+        config = Config.from_gui_input(merged_data)
 
     if not config.has_login:
         raise ValueError("Username and password are required")
 
-    if not config.start_date:
-        raise ValueError("Start date is required")
+    assert config.base_url, "Base URL is required"
+    assert config.username, "Username is required"
+    assert config.password, "Password is required"
+    assert config.start_date, "Start date is required"
 
-    client = ODataClient(config=config)
+    client = ODataClient(
+        username=config.username, password=config.password, base_url=config.base_url
+    )
 
-    do_reports(client, config)
+    # Get the classes of each report in each report group
+    report_groups = config.get_report_groups()
+    report_classes = [
+        report
+        for report_group in [report_groups.get(x) for x in config.report_groups]
+        for report in report_group or []
+    ]
+
+    # Run each report from the list of classes
+    for report_class in report_classes:
+        report = report_class(
+            client=client,
+            start_date=config.start_date,
+            end_date=config.end_date,
+            output_folder=config.output_folder,
+            debug=config.debug,
+            config=config,
+        )
+        report.run()
 
 
 if __name__ == "__main__":

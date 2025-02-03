@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import petl as etl
 
 from .report_base import ReportBase
@@ -8,7 +10,7 @@ class ReportKennametalPos(ReportBase):
     def file_name_prefix(self) -> str:
         return "kennametal_pos_"
 
-    def run(self) -> None:
+    def _run(self) -> None:
         supplier_filters = ["supplier_id eq 11777"]
         filters = supplier_filters.copy()
         filters.extend(
@@ -131,3 +133,12 @@ class ReportKennametalPos(ReportBase):
         sorted_table = etl.sort(selected_columns, "week_in_month")
 
         etl.tocsv(sorted_table, self.file_name("report"))
+
+    # Helper function to extract the week in month
+    def get_week_in_month(self, date_str: str) -> int:
+        # Parse the date-time string with timezone information
+        date = datetime.fromisoformat(
+            date_str
+        )  # Automatically handles 'T' and timezone
+        first_day = date.replace(day=1)  # Get the first day of the month
+        return (date.day + first_day.weekday()) // 7 + 1  # Calculate the week number
