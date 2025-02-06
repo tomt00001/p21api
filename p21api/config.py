@@ -102,11 +102,6 @@ class Config(BaseSettings):
         "case_sensitive": True,
     }
 
-    @classmethod
-    def from_gui_input(cls, data: dict) -> "Config":
-        """Create a Config instance from GUI input data without overriding defaults."""
-        return cls.model_construct(**data)
-
     @property
     def has_login(self) -> bool:
         """Check if login credentials are provided."""
