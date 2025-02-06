@@ -58,7 +58,7 @@ def main():
             exceptions.append(traceback.format_exc())
 
     if exceptions:
-        pprint(config.model_dump())
+        pprint(config.model_dump(exclude={"password"}))
         raise Exception(exceptions)
 
 

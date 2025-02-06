@@ -40,7 +40,9 @@ class Config(BaseSettings):
     @field_validator("start_date", mode="before")
     @classmethod
     def parse_start_date(cls, value: str | datetime | date | None) -> datetime:
-        """Parse start_date from environment or default to first day of current month."""
+        """
+        Parse start_date from environment or default to first day of current month.
+        """
         start_date = None
         if isinstance(value, str):
             start_date = datetime.strptime(value, "%Y-%m-%d")
