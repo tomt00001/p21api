@@ -1,5 +1,6 @@
 import calendar
 from datetime import datetime
+from functools import cached_property
 
 import requests
 
@@ -10,7 +11,9 @@ class ODataClient:
         self.password = password
         self.base_url = base_url
 
-        self.headers = self._get_headers()
+    @cached_property
+    def headers(self) -> dict:
+        return self._get_headers()
 
     def _get_headers(self) -> dict:
         """Authenticate and get Bearer token."""
@@ -127,8 +130,8 @@ class ODataClient:
         )[1]
 
         # Replace the time portion with the max time (23:59:59.999999)
-        return input_datetime.replace(
-            day=last_day_of_month, hour=23, minute=59, second=59, microsecond=999999
+        return datetime.combine(
+            input_datetime.replace(day=last_day_of_month), datetime.max.time()
         )
 
     def query_odataservice(

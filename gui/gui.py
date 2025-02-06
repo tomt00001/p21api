@@ -121,6 +121,7 @@ class DatePickerDialog(QDialog):
         # Buttons (OK and Cancel)
         button_layout = QHBoxLayout()
         self.ok_button = QPushButton("OK")
+        self.ok_button.setDefault(True)
         self.cancel_button = QPushButton("Cancel")
         button_layout.addWidget(self.ok_button)
         button_layout.addWidget(self.cancel_button)
@@ -159,7 +160,7 @@ class DatePickerDialog(QDialog):
         # Get the output folder
         output_folder = self.output_folder_edit.text()
         if output_folder:
-            data["output_folder"] = f"{output_folder.replace("\\", "/").rstrip("/")}//"
+            data["output_folder"] = f"{output_folder.replace('\\', '/').rstrip('/')}//"
 
         reports = self.get_selected_reports()
         if reports:

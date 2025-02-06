@@ -1,3 +1,6 @@
+import traceback
+from pprint import pprint
+
 from p21api.config import Config
 from p21api.odata_client import ODataClient
 
@@ -12,7 +15,7 @@ def main():
         if not save_clicked or not data:
             return
         merged_data = {**config.model_dump(), **data}
-        config = Config.from_gui_input(merged_data)
+        config = Config(**merged_data)
 
     if not config.has_login:
         raise ValueError("Username and password are required")
@@ -34,17 +37,29 @@ def main():
         for report in report_group or []
     ]
 
+    exceptions = []
+    raise_exception = config.debug
+
     # Run each report from the list of classes
     for report_class in report_classes:
-        report = report_class(
-            client=client,
-            start_date=config.start_date,
-            end_date=config.end_date,
-            output_folder=config.output_folder,
-            debug=config.debug,
-            config=config,
-        )
-        report.run()
+        try:
+            report = report_class(
+                client=client,
+                start_date=config.start_date,
+                end_date=config.end_date,
+                output_folder=config.output_folder,
+                debug=config.debug,
+                config=config,
+            )
+            report.run()
+        except Exception as e:
+            if raise_exception:
+                raise e
+            exceptions.append(traceback.format_exc())
+
+    if exceptions:
+        pprint(config.model_dump(exclude={"password"}))
+        raise Exception(exceptions)
 
 
 if __name__ == "__main__":

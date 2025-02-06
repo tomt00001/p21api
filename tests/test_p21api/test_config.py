@@ -90,20 +90,6 @@ def test_should_show_gui(
     assert config.should_show_gui == expected_result
 
 
-# Test from_gui_input method
-def test_from_gui_input():
-    # Simulate GUI input data (only including keys that might be input by the GUI)
-    gui_data = {"username": "test_user"}
-
-    # Create Config instance from GUI input, expect the other fields to be defaulted
-    config = Config.from_gui_input(gui_data)
-
-    # Check if the fields match
-    assert config.username == "test_user"
-    assert config.password is None  # Defaulted to None
-    assert config.output_folder == "output\\"  # Defaulted value
-
-
 # Test get_report_groups and get_reports_list methods
 def test_get_report_groups():
     report_groups = Config.get_report_groups()
