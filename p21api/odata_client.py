@@ -1,5 +1,6 @@
 import calendar
 from datetime import datetime
+from functools import cached_property
 
 import requests
 
@@ -10,7 +11,9 @@ class ODataClient:
         self.password = password
         self.base_url = base_url
 
-        self.headers = self._get_headers()
+    @cached_property
+    def headers(self) -> dict:
+        return self._get_headers()
 
     def _get_headers(self) -> dict:
         """Authenticate and get Bearer token."""
