@@ -1,3 +1,4 @@
+import calendar
 import os
 from datetime import date, datetime
 from pathlib import Path
@@ -40,11 +41,14 @@ class Config(BaseSettings):
     @classmethod
     def parse_start_date(cls, value: str | datetime | date | None) -> datetime:
         """Parse start_date from environment or default to first day of current month."""
+        start_date = None
         if isinstance(value, str):
-            return datetime.strptime(value, "%Y-%m-%d")
+            start_date = datetime.strptime(value, "%Y-%m-%d")
         if isinstance(value, date):
-            return datetime.combine(value, datetime.min.time())
-        return datetime(datetime.now().year, datetime.now().month, 1)
+            start_date = value
+        if not start_date:
+            start_date = date(datetime.now().year, datetime.now().month, 1)
+        return datetime.combine(start_date, datetime.min.time())
 
     @field_validator("end_date", mode="before")
     @classmethod
@@ -52,10 +56,13 @@ class Config(BaseSettings):
         cls, value: str | datetime | date | None, values
     ) -> datetime | None:
         """Parse end_date or default to the last day of the start_date's month."""
+        end_date = None
         if isinstance(value, str):
-            return datetime.strptime(value, "%Y-%m-%d")
+            end_date = datetime.strptime(value, "%Y-%m-%d")
         if isinstance(value, date):
-            return datetime.combine(value, datetime.max.time())
+            end_date = value
+        if end_date:
+            datetime.combine(end_date, datetime.max.time())
 
     @model_validator(mode="before")
     def set_end_date_if_not_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -68,7 +75,13 @@ class Config(BaseSettings):
     @property
     def end_date(self) -> datetime:
         if not self.end_date_ and self.start_date:
-            return self._date_start_of_next_month(self.start_date)
+            # Get the last day of the month
+            last_day_of_month = calendar.monthrange(
+                self.start_date.year, self.start_date.month
+            )[1]
+            return datetime.combine(
+                self.start_date.replace(day=last_day_of_month), datetime.max.time()
+            )
         if not self.end_date_:
             raise ValueError("End date is required")
         return self.end_date_
