@@ -130,8 +130,8 @@ class ODataClient:
         )[1]
 
         # Replace the time portion with the max time (23:59:59.999999)
-        return input_datetime.replace(
-            day=last_day_of_month, hour=23, minute=59, second=59, microsecond=999999
+        return datetime.combine(
+            input_datetime.replace(day=last_day_of_month), datetime.max.time()
         )
 
     def query_odataservice(
