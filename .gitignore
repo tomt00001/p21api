@@ -3,6 +3,8 @@ ruff_cache/*
 # Ignore local develop environments
 .venv
 env
+env.play
+env.prod
 
 
 # IDE Configurations
