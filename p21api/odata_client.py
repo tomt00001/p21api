@@ -44,7 +44,7 @@ class ODataClient:
         response = requests.get(url, headers=self.headers)
 
         if response.status_code != 200:
-            raise Exception(f"Failed to fetch data: {response.text}")
+            raise Exception(f"Failed to fetch data: {response.text}\nUrl:{url}")
         data = response.json()
 
         value = data.get("value")

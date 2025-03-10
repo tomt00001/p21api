@@ -106,7 +106,7 @@ class DatePickerDialog(QDialog):
         )
 
         # Populate the reports list from config
-        self.populate_reports(config.get_reports_list(), config.report_groups)
+        self.populate_reports(config.get_config_reports_list(), config.report_groups)
 
         report_layout.addWidget(self.reports_list)
         report_group.setLayout(report_layout)
@@ -164,7 +164,7 @@ class DatePickerDialog(QDialog):
 
         reports = self.get_selected_reports()
         if reports:
-            data["reports"] = reports
+            data["report_groups"] = reports
 
         return data
 
@@ -177,9 +177,9 @@ class DatePickerDialog(QDialog):
             if report in default_reports:
                 item.setSelected(True)
 
-    def get_selected_reports(self) -> list[str]:
+    def get_selected_reports(self) -> str:
         """Returns a list of selected reports."""
-        return [item.text() for item in self.reports_list.selectedItems()]
+        return ",".join(item.text() for item in self.reports_list.selectedItems())
 
 
 def show_gui_dialog(

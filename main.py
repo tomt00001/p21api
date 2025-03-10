@@ -30,12 +30,7 @@ def main():
     )
 
     # Get the classes of each report in each report group
-    report_groups = config.get_report_groups()
-    report_classes = [
-        report
-        for report_group in [report_groups.get(x) for x in config.report_groups]
-        for report in report_group or []
-    ]
+    report_classes = config.get_reports()
 
     exceptions = []
     raise_exception = config.debug

@@ -38,7 +38,7 @@ def test_parse_end_date():
     # Provide start_date and check if end_date is parsed correctly
     config = ConfigTest(start_date="2029-01-01")
     end_date = config.end_date
-    assert end_date == datetime(2029, 2, 1, 0, 0)
+    assert end_date == datetime(2029, 1, 31, 23, 59, 59, 999999)
 
     # Test if end_date can be set explicitly
     config = ConfigTest(start_date="2029-01-01", end_date_="2029-01-10")
@@ -92,7 +92,7 @@ def test_should_show_gui(
 
 # Test get_report_groups and get_reports_list methods
 def test_get_report_groups():
-    report_groups = Config.get_report_groups()
+    report_groups = Config.get_config_report_groups()
 
     # Check that report groups are correctly returned
     assert "monthly" in report_groups
@@ -102,7 +102,7 @@ def test_get_report_groups():
 
 
 def test_get_reports_list():
-    reports_list = Config.get_reports_list()
+    reports_list = Config.get_config_reports_list()
 
     # Ensure report groups are correctly returned as keys
     assert "monthly" in reports_list

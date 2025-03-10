@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings
 from .report_base import ReportBase
 from .report_daily_sales import ReportDailySales
 from .report_inventory import ReportInventory
+from .report_inventory_value import ReportInventoryValue
 from .report_jarp import ReportJarp
 from .report_kennametal_pos import ReportKennametalPos
 from .report_monthly_consolidation import ReportMonthlyConsolidation
@@ -23,7 +24,7 @@ class Config(BaseSettings):
     username: str | None = Field(default=None)
     password: str | None = Field(default=None)
     output_folder: str = Field(default="output\\")
-    report_groups: list[str] = Field(default_factory=lambda: ["monthly"])
+    report_groups: str = Field(default="monthly")
     debug: bool = Field(default=False)
     show_gui: bool = Field(default=False)
     start_date: datetime | None = Field(default=None)
@@ -116,8 +117,18 @@ class Config(BaseSettings):
                 return True
         return False
 
+    def get_reports(self) -> list[Type[ReportBase]]:
+        report_groups = self.report_groups.split(",")
+        return [
+            report
+            for report_group in [
+                self.get_config_report_groups().get(x) for x in report_groups
+            ]
+            for report in report_group or []
+        ]
+
     @staticmethod
-    def get_report_groups() -> dict[str, list[Type[ReportBase]]]:
+    def get_config_report_groups() -> dict[str, list[Type[ReportBase]]]:
         return {
             "monthly": [
                 ReportKennametalPos,
@@ -132,9 +143,10 @@ class Config(BaseSettings):
             ],
             "po": [
                 ReportOpenPO,
+                ReportInventoryValue,
             ],
         }
 
     @staticmethod
-    def get_reports_list() -> list[str]:
-        return list(Config.get_report_groups().keys())
+    def get_config_reports_list() -> list[str]:
+        return list(Config.get_config_report_groups().keys())
