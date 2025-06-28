@@ -31,6 +31,7 @@ class ODataClient:
                 "username": self.username,
                 "password": self.password,
             },
+            timeout=30,  # 30 second timeout for authentication
         )
 
         if response.status_code == 200:
@@ -41,7 +42,9 @@ class ODataClient:
 
     def fetch_data(self, url: str) -> dict | None:
         """Fetch data from the given endpoint with date filters."""
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(
+            url, headers=self.headers, timeout=60
+        )  # 60 second timeout for data fetch
 
         if response.status_code != 200:
             raise Exception(f"Failed to fetch data: {response.text}\nUrl:{url}")
@@ -175,6 +178,7 @@ class ODataClient:
                 f"{url}&$skip={count}",
                 headers=self.headers,
                 json=body,
+                timeout=60,  # 60 second timeout for batch requests
             )
             if response.status_code != 200:
                 raise Exception(f"Failed to fetch data: {response.text}")
