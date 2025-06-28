@@ -1,10 +1,12 @@
+import logging
 import traceback
-from pprint import pprint
 
 from p21api.config import Config
 from p21api.odata_client import ODataClient
 
 from gui import show_gui_dialog
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -53,9 +55,14 @@ def main():
             exceptions.append(traceback.format_exc())
 
     if exceptions:
-        pprint(config.model_dump(exclude={"password"}))
+        logger.error("Configuration: %s", config.model_dump(exclude={"password"}))
         raise Exception(exceptions)
 
 
 if __name__ == "__main__":
+    # Configure logging for when running as script
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     main()
