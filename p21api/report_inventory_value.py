@@ -27,7 +27,8 @@ class ReportInventoryValue(ReportBase):
         )
         sales = etl.fromdicts(sales_data)
 
-        # Deduplicate the rows based on 'item_id' (keeps the first occurrence of each item_id)
+        # Deduplicate the rows based on 'item_id'
+        # (keeps the first occurrence of each item_id)
         deduplicated_sales = etl.distinct(sales, key="item_id")
         reordered_sales = etl.cut(deduplicated_sales, "item_id", "invoice_date")
 
@@ -52,7 +53,8 @@ class ReportInventoryValue(ReportBase):
         )
         po_line = etl.fromdicts(po_line_data)
 
-        # Deduplicate the rows based on 'item_id' (keeps the first occurrence of each item_id)
+        # Deduplicate the rows based on 'item_id'
+        # (keeps the first occurrence of each item_id)
         deduplicated_po_line = etl.distinct(po_line, key="item_id")
         reordered_po_line = etl.cut(
             deduplicated_po_line, "item_id", "date_created", "received_date"

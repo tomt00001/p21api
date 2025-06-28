@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QDate
@@ -45,7 +46,7 @@ class DatePickerDialog(QDialog):
                     config.start_date.year,
                     config.start_date.month,
                     config.start_date.day,
-                )  # noqa
+                )
             )
         else:
             self.start_date_picker.setDate(
@@ -160,7 +161,10 @@ class DatePickerDialog(QDialog):
         # Get the output folder
         output_folder = self.output_folder_edit.text()
         if output_folder:
-            data["output_folder"] = f"{output_folder.replace('\\', '/').rstrip('/')}//"
+            # Use pathlib for cross-platform path handling with forward slashes
+            normalized_path = Path(output_folder)
+            # Ensure trailing slash for directory path consistency
+            data["output_folder"] = normalized_path.as_posix() + "/"
 
         reports = self.get_selected_reports()
         if reports:

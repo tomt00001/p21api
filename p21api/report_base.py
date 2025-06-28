@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -6,6 +7,9 @@ from .odata_client import ODataClient
 
 if TYPE_CHECKING:
     from .config import Config
+
+
+logger = logging.getLogger(__name__)
 
 
 class ReportBase(ABC):
@@ -25,7 +29,7 @@ class ReportBase(ABC):
         self._debug = config.debug
 
         if self._debug:
-            print(f"Running report {self.__class__.__name__}")
+            logger.info(f"Running report {self.__class__.__name__}")
 
     @property
     @abstractmethod

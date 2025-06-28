@@ -108,7 +108,8 @@ class ReportJarp(ReportBase):
         if self._debug:
             etl.tocsv(supplier, self.file_name("supplier"))
 
-        # Step 1: Join sales_history with supplier on inv_mast_uid, supplier_id, and item_id
+        # Step 1: Join sales_history with supplier on inv_mast_uid,
+        # supplier_id, and item_id
         sales_supplier_joined = etl.join(
             sales_history,
             supplier,
