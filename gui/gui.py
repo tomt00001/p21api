@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QDate
@@ -160,9 +161,9 @@ class DatePickerDialog(QDialog):
         # Get the output folder
         output_folder = self.output_folder_edit.text()
         if output_folder:
-            # Fix for Python 3.11 compatibility - can't use backslashes in f-strings
-            normalized_path = output_folder.replace("\\", "/").rstrip("/")
-            data["output_folder"] = f"{normalized_path}//"
+            # Use pathlib for cross-platform path handling
+            normalized_path = Path(output_folder)
+            data["output_folder"] = str(normalized_path / "")
 
         reports = self.get_selected_reports()
         if reports:
