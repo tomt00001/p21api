@@ -45,7 +45,7 @@ class DatePickerDialog(QDialog):
                     config.start_date.year,
                     config.start_date.month,
                     config.start_date.day,
-                )  # noqa
+                )
             )
         else:
             self.start_date_picker.setDate(
@@ -160,7 +160,9 @@ class DatePickerDialog(QDialog):
         # Get the output folder
         output_folder = self.output_folder_edit.text()
         if output_folder:
-            data["output_folder"] = f"{output_folder.replace('\\', '/').rstrip('/')}//"
+            # Fix for Python 3.11 compatibility - can't use backslashes in f-strings
+            normalized_path = output_folder.replace("\\", "/").rstrip("/")
+            data["output_folder"] = f"{normalized_path}//"
 
         reports = self.get_selected_reports()
         if reports:
