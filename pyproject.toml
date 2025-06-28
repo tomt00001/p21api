@@ -17,6 +17,11 @@ dependencies = [
 dev = [
     "ipdb>=0.13.13,<0.14",
     "ipython>=8.27.0,<9",
+    "pytest>=8.0.0,<9",
+    "pytest-mock>=3.12.0,<4",
+    "pytest-cov>=4.0.0,<5",
+    "pytest-xdist>=3.5.0,<4",
+    "pytest-asyncio>=0.23.0,<0.24",
 ]
 
 [build-system]
@@ -86,3 +91,35 @@ line-ending = "auto"
 exclude_dirs = ["tests"]
 # Skip certain security checks that may be false positives
 skips = ["B101"]  # Skip "Test for use of assert" in non-test files
+
+[tool.coverage.run]
+source = ["p21api", "gui"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "setup.py",
+    "conftest.py",
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
