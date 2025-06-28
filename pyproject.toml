@@ -16,11 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipdb>=0.13.13,<0.14",
-    "ruff>=0.8.0,<0.9",
-    "black>=24.8.0,<25",
     "ipython>=8.27.0,<9",
-    "pyinstaller>=6.10.0,<7",
-    "pytest>=8.3.4,<9",
 ]
 
 [build-system]
@@ -29,14 +25,8 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 src = ["./p21api", "./gui", "./reports", "./config", "./client"]
-# Pyflakes, Pycodestyle, and isort
-select = ["E", "F", "I", "T"]
-# maybe need "E129"
-ignore = []
-
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
+line-length = 88
+target-version = "py311"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -63,11 +53,36 @@ exclude = [
     "venv",
     "*migrations*",
 ]
-per-file-ignores = {}
 
-# Same as Black
-line-length = 88
+[tool.ruff.lint]
+# Pyflakes, Pycodestyle, and isort
+select = ["E", "F", "I", "T"]
+# maybe need "E129"
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py311"
+per-file-ignores = {}
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.bandit]
+# Exclude test files from security scanning
+exclude_dirs = ["tests"]
+# Skip certain security checks that may be false positives
+skips = ["B101"]  # Skip "Test for use of assert" in non-test files
