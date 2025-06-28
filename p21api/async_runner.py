@@ -29,7 +29,7 @@ class AsyncReportRunner:
         self.max_workers = max_workers
 
     async def run_reports_async(
-        self, report_classes: List[type], config: Config, client: ODataClient
+        self, report_classes: List[Any], config: Config, client: ODataClient
     ) -> Dict[str, Any]:
         """
         Run multiple reports asynchronously.
@@ -42,7 +42,24 @@ class AsyncReportRunner:
         Returns:
             Dict containing results and any exceptions
         """
-        results = {"successful": [], "failed": [], "exceptions": []}
+        # Use the synchronous implementation for now since we're using threads
+        return self.run_reports_sync(report_classes, config, client)
+
+    def run_reports_sync(
+        self, report_classes: List[Any], config: Config, client: ODataClient
+    ) -> Dict[str, Any]:
+        """
+        Run multiple reports synchronously with concurrent execution.
+
+        Args:
+            report_classes: List of report classes to execute
+            config: Application configuration
+            client: OData client instance
+
+        Returns:
+            Dict containing results and any exceptions
+        """
+        results: Dict[str, Any] = {"successful": [], "failed": [], "exceptions": []}
 
         # Create report instances
         reports = []

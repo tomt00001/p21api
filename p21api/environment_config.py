@@ -160,10 +160,15 @@ def load_environment_config(env_file: Optional[str] = None) -> EnvironmentConfig
     # Override with actual environment variables
     env_vars.update(os.environ)
 
-    # Map environment variables to config
-    config_data = {
-        "environment": env_vars.get("ENVIRONMENT", Environment.DEVELOPMENT),
-        "debug": env_vars.get("DEBUG", "false").lower() == "true",
-    }
+    # Map environment variables to config with explicit typing
+    environment = Environment(env_vars.get("ENVIRONMENT", Environment.DEVELOPMENT))
+    debug = env_vars.get("DEBUG", "false").lower() == "true"
 
-    return EnvironmentConfig(**config_data)
+    return EnvironmentConfig(
+        environment=environment,
+        debug=debug,
+        logging=LoggingConfig(),
+        security=SecurityConfig(),
+        performance=PerformanceConfig(),
+        database=None,
+    )

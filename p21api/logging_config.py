@@ -115,7 +115,7 @@ def setup_logging(
 
     if environment == Environment.DEVELOPMENT:
         # Colored formatter for development
-        console_formatter = ColoredFormatter(config.format)
+        console_formatter: logging.Formatter = ColoredFormatter(config.format)
     else:
         # Standard formatter for production
         console_formatter = logging.Formatter(config.format)
@@ -138,7 +138,7 @@ def setup_logging(
 
         if environment == Environment.PRODUCTION:
             # Structured logging for production
-            file_formatter = StructuredFormatter()
+            file_formatter: logging.Formatter = StructuredFormatter()
         else:
             # Standard formatting for development/testing
             file_formatter = logging.Formatter(

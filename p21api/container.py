@@ -33,11 +33,11 @@ class Container:
         """Get an instance of the requested service."""
         # Check for singleton instance first
         if service_type in self._services:
-            return self._services[service_type]
+            return self._services[service_type]  # type: ignore[no-any-return]
 
         # Check for factory
         if service_type in self._factories:
-            return self._factories[service_type]()
+            return self._factories[service_type]()  # type: ignore[no-any-return]
 
         raise ValueError(f"Service {service_type} not registered")
 

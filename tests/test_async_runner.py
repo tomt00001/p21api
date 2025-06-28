@@ -301,3 +301,122 @@ class TestReportProgress:
         assert "Progress: 2/3" in result
         assert "66.7%" in result
         assert "Failed: 1" in result
+
+
+class TestAsyncReportRunnerConcurrent:
+    """Test the concurrent execution features of AsyncReportRunner."""
+
+    @pytest.fixture
+    def mock_config(self):
+        """Mock configuration for testing."""
+        config = Mock(spec=Config)
+        config.start_date = datetime(2024, 1, 1)
+        config.end_date = datetime(2024, 1, 31)
+        config.output_folder = "test_output/"
+        config.debug = False
+        return config
+
+    @pytest.fixture
+    def mock_client(self):
+        """Mock OData client for testing."""
+        return Mock(spec=ODataClient)
+
+    def test_run_reports_sync_success(self, mock_config, mock_client):
+        """Test the actual synchronous report execution with threading."""
+        runner = AsyncReportRunner(max_workers=2)
+
+        # Create mock report classes
+        mock_report1 = Mock(spec=ReportBase)
+        mock_report1.run.return_value = None
+
+        mock_report2 = Mock(spec=ReportBase)
+        mock_report2.run.return_value = None
+
+        mock_report_class1 = Mock()
+        mock_report_class1.__name__ = "Report1"
+        mock_report_class1.return_value = mock_report1
+
+        mock_report_class2 = Mock()
+        mock_report_class2.__name__ = "Report2"
+        mock_report_class2.return_value = mock_report2
+
+        report_classes = [mock_report_class1, mock_report_class2]
+
+        # Run the actual sync method
+        results = runner.run_reports_sync(report_classes, mock_config, mock_client)
+
+        # Verify results
+        assert "successful" in results
+        assert "failed" in results
+        assert "exceptions" in results
+        assert len(results["successful"]) == 2
+        assert len(results["failed"]) == 0
+        assert len(results["exceptions"]) == 0
+
+        # Verify mocks were called
+        mock_report_class1.assert_called_once()
+        mock_report_class2.assert_called_once()
+        mock_report1.run.assert_called_once()
+        mock_report2.run.assert_called_once()
+
+    def test_run_reports_sync_with_runtime_failure(self, mock_config, mock_client):
+        """Test sync execution with runtime failures."""
+        runner = AsyncReportRunner(max_workers=2)
+
+        # Create one good report and one that fails during execution
+        mock_report1 = Mock(spec=ReportBase)
+        mock_report1.run.return_value = None
+
+        mock_report2 = Mock(spec=ReportBase)
+        mock_report2.run.side_effect = Exception("Runtime failure")
+
+        mock_report_class1 = Mock()
+        mock_report_class1.__name__ = "GoodReport"
+        mock_report_class1.return_value = mock_report1
+
+        mock_report_class2 = Mock()
+        mock_report_class2.__name__ = "BadReport"
+        mock_report_class2.return_value = mock_report2
+
+        report_classes = [mock_report_class1, mock_report_class2]
+
+        # Run the sync method
+        results = runner.run_reports_sync(report_classes, mock_config, mock_client)
+
+        # Verify mixed results
+        assert len(results["successful"]) == 1
+        assert len(results["failed"]) == 1
+        assert "GoodReport" in results["successful"]
+        assert "BadReport" in results["failed"]
+        # The exception is logged but not stored in exceptions list
+        # because _run_single_report catches it and returns False
+        assert len(results["exceptions"]) == 0
+
+    def test_run_reports_sync_creation_failure(self, mock_config, mock_client):
+        """Test sync execution with creation failures."""
+        runner = AsyncReportRunner(max_workers=2)
+
+        # Create one good report and one that fails during creation
+        mock_report1 = Mock(spec=ReportBase)
+        mock_report1.run.return_value = None
+
+        mock_report_class1 = Mock()
+        mock_report_class1.__name__ = "GoodReport"
+        mock_report_class1.return_value = mock_report1
+
+        mock_report_class2 = Mock()
+        mock_report_class2.__name__ = "FailedCreation"
+        mock_report_class2.side_effect = Exception("Creation failed")
+
+        report_classes = [mock_report_class1, mock_report_class2]
+
+        # Run the sync method
+        results = runner.run_reports_sync(report_classes, mock_config, mock_client)
+
+        # Verify results
+        assert len(results["successful"]) == 1
+        assert len(results["failed"]) == 1
+        assert "GoodReport" in results["successful"]
+        assert "FailedCreation" in results["failed"]
+        assert len(results["exceptions"]) == 1
+        assert "Creation failed" in results["exceptions"]
