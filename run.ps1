@@ -2,4 +2,4 @@
 $env:PYTHONBREAKPOINT = "ipdb.set_trace"
 
 # Run the Python script with ipython
-ipython main.py
+uv run ipython main.py

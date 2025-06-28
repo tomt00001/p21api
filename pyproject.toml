@@ -1,31 +1,31 @@
-[tool.poetry]
+[project]
 name = "p21api"
 version = "0.1.0"
 description = ""
-authors = ["tomt00001 <107521427+tomt00001@users.noreply.github.com>"]
+authors = [{ name = "tomt00001", email = "107521427+tomt00001@users.noreply.github.com" }]
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
+dependencies = [
+    "requests>=2.32.3,<3",
+    "petl>=1.7.15,<2",
+    "pyqt6>=6.7.1,<7",
+    "pydantic>=2.10.6,<3",
+    "pydantic-settings>=2.7.1,<3",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.14"
-requests = "^2.32.3"
-petl = "^1.7.15"
-pyqt6 = "^6.7.1"
-pydantic = "^2.10.6"
-pydantic-settings = "^2.7.1"
-
-[tool.poetry.group.dev.dependencies]
-ipdb = "^0.13.13"
-ruff = "^0.6.8"
-black = "^24.8.0"
-ipython = "^8.27.0"
-pyinstaller = "^6.10.0"
-pytest = "^8.3.4"
-
-
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13,<0.14",
+    "ruff>=0.6.8,<0.7",
+    "black>=24.8.0,<25",
+    "ipython>=8.27.0,<9",
+    "pyinstaller>=6.10.0,<7",
+    "pytest>=8.3.4,<9",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 src = ["./p21api", "./gui", "./reports", "./config", "./client"]
