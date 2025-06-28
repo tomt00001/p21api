@@ -72,4 +72,42 @@ cython_debug/
 # TMP Files
 tmp/
 
+# CSV output files
 *.csv
+
+# Test-generated folders (performance tests can create numbered folders)
+output[0-9]*
+test[0-9]*
+
+# Test folders with special characters (from config extended tests)
+test with spaces/
+test-with-dashes/
+test_with_underscores/
+test.with.dots/
+tëst_ôutput/
+very_long_path_*/
+
+# Test output directories
+test_output/
+htmlcov/
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+.#*
