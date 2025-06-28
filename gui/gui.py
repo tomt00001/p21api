@@ -161,9 +161,10 @@ class DatePickerDialog(QDialog):
         # Get the output folder
         output_folder = self.output_folder_edit.text()
         if output_folder:
-            # Use pathlib for cross-platform path handling
+            # Use pathlib for cross-platform path handling with forward slashes
             normalized_path = Path(output_folder)
-            data["output_folder"] = str(normalized_path / "")
+            # Ensure trailing slash for directory path consistency
+            data["output_folder"] = normalized_path.as_posix() + "/"
 
         reports = self.get_selected_reports()
         if reports:
