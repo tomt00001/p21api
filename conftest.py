@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from p21api.odata_client import ODataClient
-from tests.config_test import ConfigTest
+from tests.test_config_legacy import ConfigTest
 
 
 @pytest.fixture
