@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+
 
 def create_temp_directory():
     """Create a temporary directory for test outputs."""
@@ -92,14 +94,27 @@ def patch_datetime_now(fixed_date=None):
     return patch("datetime.datetime", mock_dt)
 
 
-def skip_if_no_gui():
-    """Skip test if GUI dependencies are not available."""
+def is_gui_available():
+    """Check if GUI dependencies are available."""
     try:
         import PyQt6  # noqa: F401
 
-        return False
-    except ImportError:
         return True
+    except ImportError:
+        return False
+
+
+@pytest.fixture
+def skip_if_no_gui():
+    """Pytest fixture to skip tests if GUI dependencies are not available."""
+    if not is_gui_available():
+        pytest.skip("GUI dependencies (PyQt6) not available")
+
+
+# Decorator for conditional skipping of GUI tests
+skip_without_gui = pytest.mark.skipif(
+    not is_gui_available(), reason="GUI dependencies (PyQt6) not available"
+)
 
 
 def skip_if_no_network():
