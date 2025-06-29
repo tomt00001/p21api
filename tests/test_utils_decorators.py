@@ -1,7 +1,6 @@
 """Tests for utility decorators and helpers."""
 
-import time
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from p21api.utils import CircuitBreaker, rate_limit, retry_on_failure
@@ -47,15 +46,28 @@ class TestRateLimit:
     def test_rate_limiting_timing(self):
         """Test that rate limiting enforces timing constraints."""
         mock_func = Mock(return_value="result")
-        decorated = rate_limit(calls_per_second=10.0)(mock_func)  # 0.1s between calls
 
-        start_time = time.time()
-        decorated()
-        decorated()
-        end_time = time.time()
+        # Mock time.time() to return controlled timestamps
+        # First call: now=0.0, last_called=0.0, elapsed=0.0 < 0.1, sleep 0.1
+        # Second call: now=0.15, last_called=0.1, elapsed=0.05 < 0.1, sleep 0.05
+        mock_times = [0.0, 0.1, 0.15, 0.2]  # Four calls to time.time()
+        mock_sleeps = []
 
-        # Should take at least 0.1 seconds for two calls
-        assert end_time - start_time >= 0.09  # Small tolerance for timing
+        def mock_sleep(duration):
+            mock_sleeps.append(duration)
+
+        with patch("p21api.utils.time.time", side_effect=mock_times):
+            with patch("p21api.utils.time.sleep", side_effect=mock_sleep):
+                # 0.1s between calls (10 calls per second)
+                decorated = rate_limit(calls_per_second=10.0)(mock_func)
+
+                decorated()  # First call: sleeps 0.1s
+                decorated()  # Second call: sleeps 0.05s
+
+        # Verify sleep durations were enforced correctly
+        assert len(mock_sleeps) == 2
+        assert abs(mock_sleeps[0] - 0.1) < 0.001  # First call sleeps full interval
+        assert abs(mock_sleeps[1] - 0.05) < 0.001  # Second call sleeps remaining time
         assert mock_func.call_count == 2
 
 
@@ -102,25 +114,31 @@ class TestCircuitBreaker:
                 raise Exception("failure")
             return "success"
 
-        breaker = CircuitBreaker(failure_threshold=2, recovery_timeout=0.01)
-        decorated = breaker(test_func)
+        # Mock time.time() to control the recovery timeout logic
+        # Times: [0.0, 0.0, 0.01, 0.01, 0.02, 0.02]
+        # - First failure at t=0.0, sets last_failure_time=0.0
+        # - Second failure at t=0.01, sets last_failure_time=0.01
+        # - Recovery check at t=0.02, elapsed=0.01 >= recovery_timeout=0.01
+        mock_times = [0.0, 0.0, 0.01, 0.01, 0.02, 0.02]
 
-        # Trigger failures to open circuit
-        with pytest.raises(Exception):
-            decorated()
-        with pytest.raises(Exception):
-            decorated()
+        with patch("p21api.utils.time.time", side_effect=mock_times):
+            breaker = CircuitBreaker(failure_threshold=2, recovery_timeout=0.01)
+            decorated = breaker(test_func)
 
-        # Wait for recovery timeout
-        time.sleep(0.02)
+            # Trigger failures to open circuit
+            with pytest.raises(Exception):
+                decorated()
+            with pytest.raises(Exception):
+                decorated()
 
-        # Next call should succeed and reset the circuit
-        result = decorated()
-        assert result == "success"
+            # Next call should succeed and reset the circuit
+            # (recovery timeout has passed in mocked time)
+            result = decorated()
+            assert result == "success"
 
-        # Verify the circuit is now closed and working normally
-        result = decorated()
-        assert result == "success"
+            # Verify the circuit is now closed and working normally
+            result = decorated()
+            assert result == "success"
 
     def test_retry_with_no_exception_raised(self):
         """Test retry decorator when no exception is raised."""
