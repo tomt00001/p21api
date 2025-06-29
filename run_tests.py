@@ -22,6 +22,7 @@ For uv-managed projects like this one, 'uv run pytest' is preferred as it:
 # ruff: noqa: T201  # Allow print statements in this utility script
 
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -31,10 +32,14 @@ def run_command(command, description):
     """Run a command and print the result."""
     print(f"\n{'=' * 60}")
     print(f"Running: {description}")
-    print(f"Command: {command}")
+    print(f"Command: {' '.join(command) if isinstance(command, list) else command}")
     print("=" * 60)
 
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    # Convert string command to list if needed for safer execution
+    if isinstance(command, str):
+        command = shlex.split(command)
+
+    result = subprocess.run(command, shell=False, capture_output=True, text=True)
 
     if result.stdout:
         print("STDOUT:")
@@ -76,14 +81,17 @@ def demonstrate_pytest_methods():
                 method["command"], check=True, capture_output=True, text=True
             )
             status = f"✓ WORKS - {result.stdout.strip()}"
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            # Try to get more details about the failure
-            if hasattr(e, "stderr") and e.stderr:
+        except subprocess.CalledProcessError as e:
+            # CalledProcessError has stderr and stdout attributes
+            if e.stderr:
                 status = f"✗ FAILED - {e.stderr.strip()}"
-            elif hasattr(e, "stdout") and e.stdout:
+            elif e.stdout:
                 status = f"✗ FAILED - {e.stdout.strip()}"
             else:
-                status = f"✗ FAILED - {str(e)}"
+                status = f"✗ FAILED - Process failed with return code {e.returncode}"
+        except FileNotFoundError as e:
+            # FileNotFoundError doesn't have stderr/stdout attributes
+            status = f"✗ FAILED - {str(e)}"
 
         print(f"{method['name']:<25}: {status}")
         print(f"{'':25}  {method['description']}")

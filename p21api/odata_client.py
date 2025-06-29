@@ -1,6 +1,7 @@
 import calendar
 from datetime import datetime
 from functools import cached_property
+from typing import Any
 
 import requests
 
@@ -57,7 +58,7 @@ class ODataClient:
         value = data.get("value")
         if not value:
             return None
-        return value
+        return value  # type: ignore[no-any-return]
 
     def _get_endpoint_url(self, endpoint: str) -> str:
         return f"{self.base_url}/odataservice/odata/view/{endpoint}"
@@ -162,8 +163,8 @@ class ODataClient:
         start_date: datetime | None = None,
         page_size: int = 1000,
         **kwargs,
-    ) -> dict | None:
-        body = {}
+    ) -> list[dict[str, Any]] | None:
+        body: dict[str, Any] = {}
         url = self._get_endpoint_url(endpoint)
 
         url = self.compose_url(
@@ -176,7 +177,7 @@ class ODataClient:
 
         max_count = 0
         count = 0
-        data = []
+        data: list[dict[str, Any]] = []
         while True:
             response = requests.post(
                 f"{url}&$skip={count}",

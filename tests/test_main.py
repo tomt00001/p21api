@@ -100,7 +100,9 @@ class TestMain:
 
         mock_config_class.return_value = mock_config
 
-        with pytest.raises(ValueError, match="Username and password are required"):
+        with pytest.raises(
+            main.ConfigurationError, match="Username and password are required"
+        ):
             main.main()
 
     @patch("main.ODataClient")
@@ -114,7 +116,9 @@ class TestMain:
 
         mock_config_class.return_value = mock_config
 
-        with pytest.raises(AssertionError, match="Base URL is required"):
+        with pytest.raises(
+            main.ConfigurationError, match="Missing required fields: base_url"
+        ):
             main.main()
 
     @patch("main.ODataClient")
@@ -129,7 +133,9 @@ class TestMain:
 
         mock_config_class.return_value = mock_config
 
-        with pytest.raises(AssertionError, match="Username is required"):
+        with pytest.raises(
+            main.ConfigurationError, match="Missing required fields: username"
+        ):
             main.main()
 
     @patch("main.ODataClient")
@@ -145,7 +151,9 @@ class TestMain:
 
         mock_config_class.return_value = mock_config
 
-        with pytest.raises(AssertionError, match="Password is required"):
+        with pytest.raises(
+            main.ConfigurationError, match="Missing required fields: password"
+        ):
             main.main()
 
     @patch("main.ODataClient")
@@ -162,7 +170,9 @@ class TestMain:
 
         mock_config_class.return_value = mock_config
 
-        with pytest.raises(AssertionError, match="Start date is required"):
+        with pytest.raises(
+            main.ConfigurationError, match="Missing required fields: start_date"
+        ):
             main.main()
 
     @patch("main.ODataClient")
@@ -212,6 +222,7 @@ class TestMain:
     ):
         """Test main function with report exception in debug mode."""
         mock_report_class = Mock()
+        mock_report_class.__name__ = "TestReport"  # Add __name__ attribute
         mock_report = Mock()
         mock_report.run.side_effect = Exception("Test exception")
         mock_report_class.return_value = mock_report
@@ -233,7 +244,9 @@ class TestMain:
         mock_client = Mock()
         mock_odata_client_class.return_value = mock_client
 
-        with pytest.raises(Exception, match="Test exception"):
+        with pytest.raises(
+            main.ReportExecutionError, match="Failed to execute TestReport"
+        ):
             main.main()
 
     @patch("main.logger")
@@ -244,6 +257,7 @@ class TestMain:
     ):
         """Test main function with report exception in production mode."""
         mock_report_class = Mock()
+        mock_report_class.__name__ = "TestReport"  # Add __name__ attribute
         mock_report = Mock()
         mock_report.run.side_effect = Exception("Test exception")
         mock_report_class.return_value = mock_report
@@ -266,12 +280,12 @@ class TestMain:
         mock_client = Mock()
         mock_odata_client_class.return_value = mock_client
 
-        with pytest.raises(Exception):
+        with pytest.raises(main.ReportExecutionError):
             main.main()
 
         # Should log config (excluding password) when there are exceptions
         mock_config.model_dump.assert_called_with(exclude={"password"})
-        mock_logger.error.assert_called_once()
+        mock_logger.error.assert_called()
 
     @patch("main.ODataClient")
     @patch("main.Config")
