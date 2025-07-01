@@ -25,6 +25,8 @@ class ReportMonthlyInvoices(ReportBase):
                 "salesrep_id",
             ],
             order_by=["year_for_period asc", "invoice_no asc"],
+            use_pagination=True,
+            page_size=1000,
         )
         if not invoice_data:
             return

@@ -41,6 +41,8 @@ class ReportInventory(ReportBase):
                 "location_id eq 101",
                 "qty_on_hand gt 0",
             ],
+            use_pagination=True,
+            page_size=1000,
         )
         if not stockstatus_data:
             return
@@ -90,6 +92,8 @@ class ReportInventory(ReportBase):
                 "primary_supplier_id eq 11777",
                 "location_id eq 101",
             ],
+            use_pagination=True,
+            page_size=1000,
         )
         if not inventoryvalue_data:
             return
@@ -139,6 +143,8 @@ class ReportInventory(ReportBase):
                 "primary_supplier_id eq 11777",
                 "location_id eq 101",
             ],
+            use_pagination=True,
+            page_size=1000,
         )
         if not inactive_items_data:
             return

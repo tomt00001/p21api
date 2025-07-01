@@ -9,9 +9,9 @@ class ReportJarp(ReportBase):
         return "jarp_"
 
     def _run(self) -> None:
+        # Use improved pagination-aware query method with explicit parameters
         invoice_data, url = self._client.query_odataservice(
-            "p21_view_invoice_hdr",
-            start_date=self._start_date,
+            endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",
                 "freight",
@@ -27,10 +27,12 @@ class ReportJarp(ReportBase):
                 "ship_to_id",
                 "salesrep_id",
             ],
+            start_date=self._start_date,
             filters=[
                 "(ship_to_id eq 12755 or ship_to_id eq 15097)",
             ],
             order_by=["invoice_date asc"],
+            page_size=500,  # Smaller page size for complex joins
         )
         if not invoice_data:
             return
@@ -50,8 +52,8 @@ class ReportJarp(ReportBase):
                 for invoice_id in {row["invoice_no"] for row in invoice_data}
             ]
         )
-        invoice_line_data, url = self._client.query_odataservice(
-            "p21_view_invoice_line",
+        invoice_line_data, _ = self._client.query_odataservice(
+            endpoint="p21_view_invoice_line",
             selects=[
                 "item_id",
                 "item_desc",
@@ -64,6 +66,7 @@ class ReportJarp(ReportBase):
                 "line_no",
             ],
             filters=[f"({invoice_ids_filter})"],
+            page_size=500,  # Smaller page size for detailed line data
         )
         if not invoice_line_data:
             return
@@ -71,8 +74,8 @@ class ReportJarp(ReportBase):
         if self._debug:
             etl.tocsv(invoice_line, self.file_name("invoice_line"))
 
-        sales_history_data, url = self._client.query_odataservice(
-            "p21_sales_history_view",
+        sales_history_data, _ = self._client.query_odataservice(
+            endpoint="p21_sales_history_view",
             selects=[
                 "item_id",
                 "item_desc",
@@ -85,6 +88,7 @@ class ReportJarp(ReportBase):
                 "ship_to_id",
             ],
             filters=[f"({invoice_ids_filter})"],
+            page_size=500,  # Smaller page size for history data
         )
         if not sales_history_data:
             return
@@ -99,10 +103,11 @@ class ReportJarp(ReportBase):
                 if supplier_id is not None
             ]
         )
-        supplier_data, url = self._client.query_odataservice(
-            "p21_view_inventory_supplier",
+        supplier_data, _ = self._client.query_odataservice(
+            endpoint="p21_view_inventory_supplier",
             selects=["inv_mast_uid", "supplier_id", "item_id"],
             filters=[f"({supplier_id_filter})"],
+            page_size=500,  # Smaller page size for supplier data
         )
         supplier = etl.fromdicts(supplier_data)
         if self._debug:

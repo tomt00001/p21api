@@ -25,6 +25,8 @@ class ReportOpenPO(ReportBase):
             ],
             filters=[f"order_date lt {start_date_str}"] + po_filters,
             order_by=["supplier_id asc", "order_date asc"],
+            use_pagination=True,
+            page_size=1000,
         )
         po = etl.fromdicts(po_data)
 
@@ -43,6 +45,8 @@ class ReportOpenPO(ReportBase):
             ],
             filters=[f"date_created lt {start_date_str}"] + po_filters,
             order_by=["po_no asc", "line_no asc"],
+            use_pagination=True,
+            page_size=1000,
         )
 
         # Filter data for only line items on a matching open PO
@@ -61,6 +65,8 @@ class ReportOpenPO(ReportBase):
             ],
             filters=[f"date_created lt {start_date_str}"],
             order_by=["supplier_id asc"],
+            use_pagination=True,
+            page_size=1000,
         )
 
         # Filter data for only suppliers on a matching open PO

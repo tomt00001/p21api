@@ -24,6 +24,8 @@ class ReportInventoryValue(ReportBase):
             selects=["item_id", "invoice_date"],
             filters=sales_filters,
             order_by=["item_id asc", "invoice_date desc"],
+            use_pagination=True,
+            page_size=1000,
         )
         sales = etl.fromdicts(sales_data)
 
@@ -50,6 +52,8 @@ class ReportInventoryValue(ReportBase):
             ],
             filters=po_line_filters,
             order_by=["item_id asc", "date_created desc"],
+            use_pagination=True,
+            page_size=1000,
         )
         po_line = etl.fromdicts(po_line_data)
 
@@ -75,6 +79,8 @@ class ReportInventoryValue(ReportBase):
                 "fifo_layer_value",
             ],
             filters=inventory_value_filters,
+            use_pagination=True,
+            page_size=1000,
         )
         inventory_value = etl.fromdicts(inventory_value_data)
         reordered_inventory_value = etl.cut(
