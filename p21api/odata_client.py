@@ -297,7 +297,7 @@ class ODataClient:
         page_size: int | None = None,
         **kwargs: Any,
     ) -> tuple[list[dict[str, Any]] | None, str]:
-        """Query OData service with pagination support."""
+        """Query OData service with pagination support and automatic URL chunking."""
         # Handle backward compatibility - selects used to be passed via kwargs
         if selects is None:
             selects = kwargs.get("selects", [])
@@ -308,6 +308,7 @@ class ODataClient:
         if order_by is None:
             order_by = kwargs.get("order_by")
 
+        # First compose the URL to check if chunking is needed
         url = self.compose_url(
             endpoint=endpoint,
             selects=selects or [],  # Ensure it's never None
@@ -316,7 +317,21 @@ class ODataClient:
             order_by=order_by,
         )
 
-        # Use legacy fetch_data for backward compatibility
+        # Check if we need to chunk the request due to URL length
+        if len(url) > 2048:  # URL too long, try chunking
+            chunked_data = self._try_chunked_request(
+                endpoint=endpoint,
+                selects=selects or [],
+                start_date=start_date,
+                filters=filters,
+                order_by=order_by,
+            )
+
+            if chunked_data is not None:
+                # Return chunked data with a representative URL
+                return chunked_data, f"{url[:100]}... (chunked)"
+
+        # Regular single request - URL is already composed above
         data = self.fetch_data(url)
         return data, url
 
@@ -435,6 +450,67 @@ class ODataClient:
             except requests.RequestException as e:
                 self.logger.error(f"Failed to fetch data from {paginated_url}: {e}")
                 raise DataFetchError(f"Failed to fetch data: {e}") from e
+
+    def _try_chunked_request(
+        self,
+        endpoint: str,
+        selects: list[str],
+        start_date: datetime | None = None,
+        filters: list[str] | None = None,
+        order_by: list[str] | None = None,
+        chunk_size: int = 50,
+    ) -> list[dict[str, Any]] | None:
+        """
+        Try to chunk a request with large OR conditions.
+        Returns None if chunking is not possible.
+        """
+        if not filters:
+            return None
+
+        # Look for filters with many OR conditions that can be chunked
+        chunkable_filter_idx = None
+        or_conditions = []
+
+        for i, filter_str in enumerate(filters):
+            if (
+                " or " in filter_str
+                and filter_str.startswith("(")
+                and filter_str.endswith(")")
+            ):
+                # Extract OR conditions from parentheses
+                inner_filter = filter_str[1:-1]  # Remove outer parentheses
+                conditions = [cond.strip() for cond in inner_filter.split(" or ")]
+                if len(conditions) > chunk_size:
+                    chunkable_filter_idx = i
+                    or_conditions = conditions
+                    break
+
+        if chunkable_filter_idx is None:
+            return None  # No chunkable filter found
+
+        # Chunk the OR conditions
+        all_data = []
+        other_filters = [f for i, f in enumerate(filters) if i != chunkable_filter_idx]
+
+        for i in range(0, len(or_conditions), chunk_size):
+            chunk_conditions = or_conditions[i : i + chunk_size]
+            chunked_filter = f"({' or '.join(chunk_conditions)})"
+
+            chunk_filters = other_filters + [chunked_filter]
+
+            chunk_url = self.compose_url(
+                endpoint=endpoint,
+                selects=selects,
+                start_date=start_date,
+                filters=chunk_filters,
+                order_by=order_by,
+            )
+
+            chunk_data = self.fetch_data(chunk_url)
+            if chunk_data:
+                all_data.extend(chunk_data)
+
+        return all_data if all_data else None
 
     def __enter__(self):
         """Context manager entry."""
