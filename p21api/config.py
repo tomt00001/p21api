@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
 from .report_daily_sales import ReportDailySales
+from .report_grind_shop_open_orders import ReportGrindShopOpenOrders
 from .report_inventory import ReportInventory
 from .report_inventory_value import ReportInventoryValue
 from .report_jarp import ReportJarp
@@ -44,39 +45,49 @@ class Config(BaseSettings):
         """
         Parse start_date from environment or default to first day of current month.
         """
-        start_date = None
         if isinstance(value, str):
-            start_date = datetime.strptime(value, "%Y-%m-%d")
-        if isinstance(value, date):
-            start_date = value
-        if not start_date:
-            start_date = date(datetime.now().year, datetime.now().month, 1)
-        return datetime.combine(start_date, datetime.min.time())
+            start_date_obj = datetime.strptime(value, "%Y-%m-%d").date()
+        elif isinstance(value, datetime):
+            start_date_obj = value.date()
+        elif isinstance(value, date):
+            start_date_obj = value
+        else:
+            start_date_obj = date(datetime.now().year, datetime.now().month, 1)
+        return datetime.combine(start_date_obj, datetime.min.time())
 
-    @field_validator("end_date", mode="before")
+    @field_validator("end_date_", mode="before")
     @classmethod
-    def parse_end_date(
-        cls, value: str | datetime | date | None, values
-    ) -> datetime | None:
+    def parse_end_date(cls, value: str | datetime | date | None) -> datetime | None:
         """Parse end_date or default to the last day of the start_date's month."""
-        end_date = None
+        if value is None:
+            return None
+
         if isinstance(value, str):
-            end_date = datetime.strptime(value, "%Y-%m-%d")
-        if isinstance(value, date):
-            end_date = value
-        if end_date:
-            datetime.combine(end_date, datetime.max.time())
+            end_date_obj = datetime.strptime(value, "%Y-%m-%d").date()
+            return datetime.combine(end_date_obj, datetime.max.time())
+        elif isinstance(value, datetime):
+            # If it's already a datetime, preserve the time component
+            return value
+        else:
+            # Must be a date object at this point
+            return datetime.combine(value, datetime.max.time())
 
     @model_validator(mode="before")
+    @classmethod
     def set_end_date_if_not_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         start_date = cls.parse_start_date(values.get("start_date"))
-        if not values.get("end_date") and start_date:
-            values["end_date"] = cls._date_start_of_next_month(start_date)
+        if not values.get("end_date_") and start_date:
+            # Set to last day of the start_date's month
+            last_day_of_month = calendar.monthrange(start_date.year, start_date.month)[
+                1
+            ]
+            values["end_date_"] = datetime.combine(
+                start_date.replace(day=last_day_of_month), datetime.max.time()
+            )
         return values
 
     @computed_field
-    @property
-    def end_date(self) -> datetime:
+    def end_date_computed(self) -> datetime:
         if not self.end_date_ and self.start_date:
             # Get the last day of the month
             last_day_of_month = calendar.monthrange(
@@ -89,8 +100,23 @@ class Config(BaseSettings):
             raise ValueError("End date is required")
         return self.end_date_
 
-    @staticmethod
-    def _date_start_of_next_month(input_date: datetime) -> datetime:
+    @property
+    def end_date(self) -> datetime:
+        """Provide backward compatibility access to end_date."""
+        if not self.end_date_ and self.start_date:
+            # Get the last day of the month
+            last_day_of_month = calendar.monthrange(
+                self.start_date.year, self.start_date.month
+            )[1]
+            return datetime.combine(
+                self.start_date.replace(day=last_day_of_month), datetime.max.time()
+            )
+        if not self.end_date_:
+            raise ValueError("End date is required")
+        return self.end_date_
+
+    @classmethod
+    def _date_start_of_next_month(cls, input_date: datetime) -> datetime:
         """Return midnight of the first day of the next month."""
         year, month = input_date.year, input_date.month
         if month == 12:
@@ -137,6 +163,7 @@ class Config(BaseSettings):
                 ReportMonthlyInvoices,
                 ReportMonthlyConsolidation,
                 ReportJarp,
+                ReportGrindShopOpenOrders,
             ],
             "inventory": [
                 ReportInventory,

@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -8,7 +9,22 @@ if TYPE_CHECKING:
     from .config import Config
 
 
+logger = logging.getLogger(__name__)
+
+
 class ReportBase(ABC):
+    @staticmethod
+    def build_or_filter(
+        field: str, values: set[object], quote_strings: bool = True
+    ) -> str:
+        """Helper to build an OData OR filter string for a field and a set of values."""
+        if not values:
+            return ""
+        if quote_strings:
+            return " or ".join([f"{field} eq '{v}'" for v in values if v is not None])
+        else:
+            return " or ".join([f"{field} eq {v}" for v in values if v is not None])
+
     def __init__(
         self,
         client: "ODataClient",
@@ -25,7 +41,7 @@ class ReportBase(ABC):
         self._debug = config.debug
 
         if self._debug:
-            print(f"Running report {self.__class__.__name__}")
+            logger.info(f"Running report {self.__class__.__name__}")
 
     @property
     @abstractmethod

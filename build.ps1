@@ -41,7 +41,7 @@ VSVersionInfo(
 "@ | Set-Content -Path "version.txt" -Encoding UTF8
 
 # Run PyInstaller with the generated version
-pyinstaller --onefile `
+uv run pyinstaller --onefile `
     --name "P21 Data Exporter" `
     --icon=logo.ico `
     --collect-submodules=p21api `

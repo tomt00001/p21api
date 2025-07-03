@@ -18,7 +18,7 @@ $pr_number = gh pr list --base main --head develop --state open --json number --
 
 if ($pr_number) {
     Write-Output "Merging PR #$pr_number"
-    
+
     # Merge the pull request
     gh pr merge $pr_number --merge
 

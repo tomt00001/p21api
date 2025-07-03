@@ -9,7 +9,7 @@ class ReportMonthlyInvoices(ReportBase):
         return "monthly_invoices_"
 
     def _run(self) -> None:
-        invoice_data, url = self._client.query_odataservice(
+        invoice_data, _ = self._client.query_odataservice(
             "p21_view_invoice_hdr",
             start_date=self._start_date,
             selects=[
@@ -25,6 +25,8 @@ class ReportMonthlyInvoices(ReportBase):
                 "salesrep_id",
             ],
             order_by=["year_for_period asc", "invoice_no asc"],
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         if not invoice_data:
             return

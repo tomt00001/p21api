@@ -1,0 +1,13 @@
+from typing import Optional
+
+from . import QWidget
+
+class QLineEdit(QWidget):
+    class EchoMode:
+        Normal: int
+        Password: int
+
+    def __init__(self, text: str = "", parent: Optional[QWidget] = None) -> None: ...
+    def setText(self, text: str) -> None: ...
+    def text(self) -> str: ...
+    def setEchoMode(self, mode: int) -> None: ...

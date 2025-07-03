@@ -8,8 +8,8 @@ class ReportOpenOrders(ReportBase):
     def file_name_prefix(self) -> str:
         return "open_orders_"
 
-    def _run(self):
-        order_data, url = self._client.query_odataservice(
+    def _run(self) -> None:
+        order_data, _ = self._client.query_odataservice(
             "p21_order_view",
             selects=[
                 "completed",
@@ -39,20 +39,20 @@ class ReportOpenOrders(ReportBase):
                 "customer_id eq 14211)",
             ],
             order_by=["customer_id asc", "order_no asc", "line_no asc"],
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         if not order_data:
             return
         order = etl.fromdicts(order_data)
         if self._debug:
             etl.tocsv(order, self.file_name("order"))
-        order_no_filters = " or ".join(
-            [
-                f"order_no eq '{order_no}'"
-                for order_no in {row["order_no"] for row in order_data}
-            ]
+        order_no_filters = ReportBase.build_or_filter(
+            "order_no",
+            {row["order_no"] for row in order_data},
         )
 
-        order_ack_line_data, url = self._client.query_odataservice(
+        order_ack_line_data, _ = self._client.query_odataservice(
             "p21_view_ord_ack_line",
             selects=[
                 "item_desc",
@@ -61,6 +61,8 @@ class ReportOpenOrders(ReportBase):
                 "order_no",
             ],
             filters=[f"({order_no_filters})"],
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         if not order_ack_line_data:
             return
