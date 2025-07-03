@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
 from .report_daily_sales import ReportDailySales
+from .report_grind_shop_open_orders import ReportGrindShopOpenOrders
 from .report_inventory import ReportInventory
 from .report_inventory_value import ReportInventoryValue
 from .report_jarp import ReportJarp
@@ -162,6 +163,7 @@ class Config(BaseSettings):
                 ReportMonthlyInvoices,
                 ReportMonthlyConsolidation,
                 ReportJarp,
+                ReportGrindShopOpenOrders,
             ],
             "inventory": [
                 ReportInventory,
