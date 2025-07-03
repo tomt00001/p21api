@@ -1,6 +1,9 @@
 """Tests for the dependency injection container module."""
 
+# Third-party imports
 import pytest
+
+# Local imports
 from p21api.container import Container, IConfigProvider, IReportRunner
 
 
@@ -8,10 +11,13 @@ class MockConfigProvider(IConfigProvider):
     """Mock config provider for testing."""
 
     def __init__(self):
-        self.test_config: dict = {}
+        self.test_config: dict[str, str] = {}
 
     def get_config(self):
-        return {"test": "config"}
+        # Return a Config instance as required by IConfigProvider
+        from p21api.config import Config
+
+        return Config()
 
 
 class MockReportRunner(IReportRunner):
@@ -175,7 +181,9 @@ class TestInterfaces:
         """Test IConfigProvider interface."""
         provider = MockConfigProvider()
         config = provider.get_config()
-        assert config == {"test": "config"}
+        from p21api.config import Config
+
+        assert isinstance(config, Config)
 
     def test_ireport_runner_interface(self):
         """Test IReportRunner interface."""

@@ -1,9 +1,13 @@
 """Tests for the async report runner module."""
 
+# Standard library imports
 from datetime import datetime
 from unittest.mock import Mock
 
+# Third-party imports
 import pytest
+
+# Local imports
 from p21api.async_runner import AsyncReportRunner, ReportProgress
 from p21api.config import Config
 from p21api.odata_client import ODataClient

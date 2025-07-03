@@ -131,3 +131,76 @@ precision = 2
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.pyright]
+# Include all source directories
+include = ["p21api", "gui", "tests", "main.py"]
+# Exclude build/cache directories
+exclude = [
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/node_modules",
+    "build",
+    "dist",
+    ".venv",
+    "env",
+    "htmlcov",
+    "output"
+]
+# Use strict type checking for main code
+typeCheckingMode = "strict"
+# Python version
+pythonVersion = "3.12"
+# Strict settings for main code
+reportMissingImports = true
+reportMissingTypeStubs = false  # We have custom stubs for petl
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+reportWildcardImportFromLibrary = true
+reportOptionalSubscript = true
+reportOptionalMemberAccess = true
+reportOptionalCall = true
+reportOptionalIterable = true
+reportOptionalContextManager = true
+reportOptionalOperand = true
+reportTypedDictNotRequiredAccess = true
+reportPrivateUsage = true
+reportConstantRedefinition = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportOverlappingOverloads = true
+reportUntypedFunctionDecorator = true
+reportUntypedClassDecorator = true
+reportUntypedBaseClass = true
+reportUntypedNamedTuple = true
+reportCallInDefaultInitializer = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportAssertAlwaysTrue = true
+reportSelfClsParameterName = true
+reportImplicitStringConcatenation = false  # Allow implicit string concatenation
+reportUnboundVariable = true
+reportUndefinedVariable = true
+# Stub path for custom type stubs
+stubPath = "typings"
+
+# Relax rules for test files since they use pytest fixtures and mocks
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["tests"]
+reportMissingParameterType = false
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportPrivateUsage = false
+reportUntypedFunctionDecorator = false
+reportUntypedClassDecorator = false
+reportOptionalMemberAccess = false
+reportOptionalOperand = false
+reportMissingImports = false
+reportUnusedVariable = false

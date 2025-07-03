@@ -8,8 +8,8 @@ class ReportOpenOrders(ReportBase):
     def file_name_prefix(self) -> str:
         return "open_orders_"
 
-    def _run(self):
-        order_data, url = self._client.query_odataservice(
+    def _run(self) -> None:
+        order_data, _ = self._client.query_odataservice(
             "p21_order_view",
             selects=[
                 "completed",
@@ -54,7 +54,7 @@ class ReportOpenOrders(ReportBase):
             ]
         )
 
-        order_ack_line_data, url = self._client.query_odataservice(
+        order_ack_line_data, _ = self._client.query_odataservice(
             "p21_view_ord_ack_line",
             selects=[
                 "item_desc",

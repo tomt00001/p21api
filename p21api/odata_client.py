@@ -79,7 +79,7 @@ class ODataClient:
         """Authenticate and get Bearer token."""
         url = f"{self.base_url}/api/security/token"
 
-        headers = {
+        headers: dict[str, str] = {
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
@@ -469,7 +469,7 @@ class ODataClient:
 
         # Look for filters with many OR conditions that can be chunked
         chunkable_filter_idx = None
-        or_conditions = []
+        or_conditions: list[str] = []
 
         for i, filter_str in enumerate(filters):
             if (
@@ -489,7 +489,7 @@ class ODataClient:
             return None  # No chunkable filter found
 
         # Chunk the OR conditions
-        all_data = []
+        all_data: list[dict[str, Any]] = []
         other_filters = [f for i, f in enumerate(filters) if i != chunkable_filter_idx]
 
         for i in range(0, len(or_conditions), chunk_size):
@@ -512,7 +512,7 @@ class ODataClient:
 
         return all_data if all_data else None
 
-    def __enter__(self):
+    def __enter__(self) -> "ODataClient":
         """Context manager entry."""
         return self
 
@@ -531,6 +531,6 @@ class ODataClient:
             self._session.close()
             self.logger.info("OData client session closed")
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor to ensure session is closed."""
         self.close()

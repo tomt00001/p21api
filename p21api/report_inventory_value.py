@@ -19,7 +19,7 @@ class ReportInventoryValue(ReportBase):
             year_ago_date,
             self._start_date,
         )
-        sales_data, url = self._client.query_odataservice(
+        sales_data, _ = self._client.query_odataservice(
             "p21_sales_history_view",
             selects=["item_id", "invoice_date"],
             filters=sales_filters,
@@ -43,7 +43,7 @@ class ReportInventoryValue(ReportBase):
             year_ago_date,
             self._start_date,
         )
-        po_line_data, url = self._client.query_odataservice(
+        po_line_data, _ = self._client.query_odataservice(
             "p21_view_po_line",
             selects=[
                 "item_id",
@@ -69,7 +69,7 @@ class ReportInventoryValue(ReportBase):
 
         # Inventory Value
         inventory_value_filters = ["fifo_layer_qty gt 0"]
-        inventory_value_data, url = self._client.query_odataservice(
+        inventory_value_data, _ = self._client.query_odataservice(
             "p21_view_inventory_value_report",
             selects=[
                 "item_id",

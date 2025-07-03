@@ -44,13 +44,12 @@ class Config(BaseSettings):
         """
         Parse start_date from environment or default to first day of current month.
         """
-        start_date_obj: date
         if isinstance(value, str):
             start_date_obj = datetime.strptime(value, "%Y-%m-%d").date()
-        elif isinstance(value, date):
-            start_date_obj = value
         elif isinstance(value, datetime):
             start_date_obj = value.date()
+        elif isinstance(value, date):
+            start_date_obj = value
         else:
             start_date_obj = date(datetime.now().year, datetime.now().month, 1)
         return datetime.combine(start_date_obj, datetime.min.time())
@@ -62,17 +61,15 @@ class Config(BaseSettings):
         if value is None:
             return None
 
-        end_date_obj: date | datetime
         if isinstance(value, str):
             end_date_obj = datetime.strptime(value, "%Y-%m-%d").date()
             return datetime.combine(end_date_obj, datetime.max.time())
-        elif isinstance(value, date) and not isinstance(value, datetime):
-            return datetime.combine(value, datetime.max.time())
         elif isinstance(value, datetime):
             # If it's already a datetime, preserve the time component
             return value
         else:
-            return None
+            # Must be a date object at this point
+            return datetime.combine(value, datetime.max.time())
 
     @model_validator(mode="before")
     @classmethod

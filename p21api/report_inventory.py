@@ -9,7 +9,7 @@ class ReportInventory(ReportBase):
         return "inventory_"
 
     def _run(self) -> None:
-        stockstatus_data, url = self._client.query_odataservice(
+        stockstatus_data, _ = self._client.query_odataservice(
             "p21_view_stockstatus_report",
             selects=[
                 "item_id",
@@ -52,7 +52,7 @@ class ReportInventory(ReportBase):
             self.file_name("stockstatus"),
         )
 
-        inventoryvalue_data, url = self._client.query_odataservice(
+        inventoryvalue_data, _ = self._client.query_odataservice(
             "p21_view_inventory_value_report",
             selects=[
                 "item_id",
@@ -103,7 +103,7 @@ class ReportInventory(ReportBase):
             self.file_name("inventory_value"),
         )
 
-        inactive_items_data, url = self._client.query_odataservice(
+        inactive_items_data, _ = self._client.query_odataservice(
             "p21_view_inactive_items_report",
             selects=[
                 "item_id",

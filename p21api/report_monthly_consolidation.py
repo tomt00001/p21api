@@ -9,7 +9,7 @@ class ReportMonthlyConsolidation(ReportBase):
         return "monthly_consolidation_"
 
     def _run(self) -> None:
-        invoice_data, url = self._client.query_odataservice(
+        invoice_data, _ = self._client.query_odataservice(
             "p21_view_invoice_hdr",
             start_date=self._start_date,
             selects=[

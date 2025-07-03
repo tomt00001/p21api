@@ -1,9 +1,13 @@
 """Tests for report base functionality."""
 
+# Standard library imports
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+# Third-party imports
 import pytest
+
+# Local imports
 from p21api.report_base import ReportBase
 
 
@@ -148,7 +152,9 @@ class TestReportBase:
         with pytest.raises(TypeError):
             # This should fail because we're trying to instantiate
             # an abstract class without implementing abstract methods
-            ReportBase(
+            # Use type() to create a dummy subclass without required methods
+            DummyReport = type("DummyReport", (ReportBase,), {})
+            DummyReport(
                 client=Mock(),
                 start_date=datetime(2024, 1, 1),
                 end_date=datetime(2024, 1, 31),

@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
+from typing import Any
 
 from .environment_config import Environment, LoggingConfig
 
@@ -17,7 +18,7 @@ class ColoredFormatter(logging.Formatter):
     """Colored console formatter for better readability."""
 
     # ANSI color codes
-    COLORS = {
+    COLORS: dict[str, str] = {
         "DEBUG": "\033[36m",  # Cyan
         "INFO": "\033[32m",  # Green
         "WARNING": "\033[33m",  # Yellow
@@ -26,7 +27,7 @@ class ColoredFormatter(logging.Formatter):
         "RESET": "\033[0m",  # Reset
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Format the log record with colors."""
         # Add color to levelname
         if record.levelname in self.COLORS:
@@ -42,11 +43,11 @@ class ColoredFormatter(logging.Formatter):
 class StructuredFormatter(logging.Formatter):
     """Structured formatter for JSON-like log output."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Format the log record as structured data."""
         import json
 
-        log_data = {
+        log_data: dict[str, Any] = {
             "timestamp": self.formatTime(record),
             "level": record.levelname,
             "logger": record.name,
@@ -199,15 +200,15 @@ class LoggingContext:
         self.level = level
         self.original_level = logger.level
 
-    def __enter__(self):
+    def __enter__(self) -> logging.Logger:
         self.logger.setLevel(self.level)
         return self.logger
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.logger.setLevel(self.original_level)
 
 
-def with_logging_level(logger: logging.Logger, level: int):
+def with_logging_level(logger: logging.Logger, level: int) -> LoggingContext:
     """
     Context manager to temporarily change logging level.
 

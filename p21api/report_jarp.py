@@ -10,7 +10,7 @@ class ReportJarp(ReportBase):
 
     def _run(self) -> None:
         # Use improved pagination-aware query method with explicit parameters
-        invoice_data, url = self._client.query_odataservice(
+        invoice_data, _ = self._client.query_odataservice(
             endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",
@@ -39,9 +39,7 @@ class ReportJarp(ReportBase):
         invoice_pre = etl.fromdicts(invoice_data)
         invoice = etl.select(
             invoice_pre,
-            lambda rec: not rec.get("po_no").startswith("P")
-            if rec.get("po_no")
-            else True,
+            lambda rec: not (rec.get("po_no") or "").startswith("P"),
         )
         if self._debug:
             etl.tocsv(invoice, self.file_name("invoice"))

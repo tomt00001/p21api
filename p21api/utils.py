@@ -11,7 +11,7 @@ def retry_on_failure(
     max_retries: int = 3,
     delay: float = 1.0,
     backoff_factor: float = 2.0,
-    exceptions: tuple = (Exception,),
+    exceptions: tuple[type[Exception], ...] = (Exception,),
 ) -> Callable[[F], F]:
     """
     Decorator to retry function calls on failure with exponential backoff.
@@ -28,7 +28,7 @@ def retry_on_failure(
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             last_exception = None
             current_delay = delay
 
@@ -69,7 +69,7 @@ def rate_limit(calls_per_second: float = 1.0) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             now = time.time()
             elapsed = now - last_called[0]
 
@@ -110,7 +110,7 @@ class CircuitBreaker:
 
     def __call__(self, func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if self._state == "OPEN":
                 if self._should_attempt_reset():
                     self._state = "HALF_OPEN"
