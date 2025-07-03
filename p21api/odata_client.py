@@ -194,7 +194,7 @@ class ODataClient:
         )
 
         if response.status_code != 200:
-            raise Exception(f"Failed to fetch data: {response.text}\nUrl:{url}")
+            raise DataFetchError(f"Failed to fetch data: {response.text}\nUrl:{url}")
         data = response.json()
 
         value = data.get("value")
@@ -376,7 +376,7 @@ class ODataClient:
                 timeout=self.DATA_TIMEOUT,
             )
             if response.status_code != 200:
-                raise Exception(f"Failed to fetch data: {response.text}")
+                raise DataFetchError(f"Failed to fetch data: {response.text}")
 
             value = response.json().get("value")
             if not value:
