@@ -39,7 +39,7 @@ class ReportOpenOrders(ReportBase):
                 "customer_id eq 14211)",
             ],
             order_by=["customer_id asc", "order_no asc", "line_no asc"],
-            use_pagination=True,
+            # use_pagination removed; rely on page_size
             page_size=1000,
         )
         if not order_data:
@@ -63,7 +63,7 @@ class ReportOpenOrders(ReportBase):
                 "order_no",
             ],
             filters=[f"({order_no_filters})"],
-            use_pagination=True,
+            # use_pagination removed; rely on page_size
             page_size=1000,
         )
         if not order_ack_line_data:
