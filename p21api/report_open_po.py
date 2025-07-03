@@ -28,7 +28,7 @@ class ReportOpenPO(ReportBase):
             ],
             filters=[f"order_date lt {start_date_str}"] + po_filters,
             order_by=["supplier_id asc", "order_date asc"],
-            # use_pagination removed; rely on page_size
+            # Pagination is handled using the page_size parameter
             page_size=1000,
         )
         po = etl.fromdicts(po_data)
