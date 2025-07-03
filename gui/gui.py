@@ -1,7 +1,6 @@
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import QDate
 from PyQt6.QtWidgets import (
@@ -14,10 +13,11 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
-    QListWidgetItem,
+    # QListWidgetItem,  # No longer used
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
+    QWidget,
 )
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class DatePickerDialog(QDialog):
-    def __init__(self, config: "Config", parent=None) -> None:
+    def __init__(self, config: "Config", parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # Set dialog title and size
@@ -72,7 +72,7 @@ class DatePickerDialog(QDialog):
         # Username
         layout.addWidget(QLabel("Username"))
         self.username_edit = QLineEdit()
-        self.username_edit.setText(config.username)  # Set default username
+        self.username_edit.setText(config.username or "")  # Set default username
         layout.addWidget(self.username_edit)
 
         # Password
@@ -81,13 +81,13 @@ class DatePickerDialog(QDialog):
         self.password_edit.setEchoMode(
             QLineEdit.EchoMode.Password
         )  # Mask the password input
-        self.password_edit.setText(config.password)  # Set default password
+        self.password_edit.setText(config.password or "")  # Set default password
         layout.addWidget(self.password_edit)
 
         # Output Folder Picker
         layout.addWidget(QLabel("Output Folder"))
         self.output_folder_edit = QLineEdit()
-        self.output_folder_edit.setText(config.output_folder)
+        self.output_folder_edit.setText(config.output_folder or "")
         layout.addWidget(self.output_folder_edit)
 
         self.browse_button = QPushButton("Browse")
@@ -107,7 +107,9 @@ class DatePickerDialog(QDialog):
         )
 
         # Populate the reports list from config
-        self.populate_reports(config.get_config_reports_list(), config.report_groups)
+        reports_list = config.get_config_reports_list()
+        default_reports = list(config.report_groups)
+        self.populate_reports(reports_list, default_reports)
 
         report_layout.addWidget(self.reports_list)
         report_group.setLayout(report_layout)
@@ -135,13 +137,13 @@ class DatePickerDialog(QDialog):
         self.ok_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
 
-    def browse_folder(self):
+    def browse_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(self, "Select Directory")
         if folder:
             self.output_folder_edit.setText(folder)
 
-    def get_data(self):
-        data = {}
+    def get_data(self) -> dict[str, Any]:
+        data: dict[str, Any] = {}
         # Get the date values
         start_date = self.start_date_picker.date().toPyDate()
         if start_date:
@@ -175,10 +177,11 @@ class DatePickerDialog(QDialog):
     def populate_reports(self, reports: list[str], default_reports: list[str]) -> None:
         """Populates the QListWidget with reports and sets default selections."""
         for report in reports:
-            item = QListWidgetItem(report)
-            self.reports_list.addItem(item)
-            # Set default selection if report is in the default list
-            if report in default_reports:
+            self.reports_list.addItem(report)
+        # Set default selection if report is in the default list
+        for i in range(self.reports_list.count()):
+            item = self.reports_list.item(i)
+            if item is not None and item.text() in default_reports:
                 item.setSelected(True)
 
     def get_selected_reports(self) -> str:
@@ -188,7 +191,7 @@ class DatePickerDialog(QDialog):
 
 def show_gui_dialog(
     config: "Config",
-) -> tuple[dict[str, datetime | str | None] | None, bool]:
+) -> tuple[dict[str, Any] | None, bool]:
     _ = QApplication(sys.argv)  # Initialize the QApplication
 
     dialog = DatePickerDialog(config=config)

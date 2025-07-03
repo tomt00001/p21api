@@ -17,9 +17,9 @@ T = TypeVar("T")
 class Container:
     """Simple dependency injection container."""
 
-    def __init__(self):
-        self._services: Dict[Type, Any] = {}
-        self._factories: Dict[Type, Callable[[], Any]] = {}
+    def __init__(self) -> None:
+        self._services: Dict[Type[Any], Any] = {}
+        self._factories: Dict[Type[Any], Callable[[], Any]] = {}
 
     def register(self, service_type: Type[T], instance: T) -> None:
         """Register a singleton instance."""
@@ -64,6 +64,6 @@ class IReportRunner(ABC):
     """Interface for report execution."""
 
     @abstractmethod
-    def run_reports(self, report_classes: list, config: "Config") -> list[str]:
+    def run_reports(self, report_classes: list[Any], config: "Config") -> list[str]:
         """Run a list of reports and return any exceptions."""
         pass

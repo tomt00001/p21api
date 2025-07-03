@@ -75,43 +75,44 @@ def main() -> NoReturn | None:
         )
 
     # At this point we know these are not None due to validation above
-    client = ODataClient(
+    with ODataClient(
         username=config.username,  # type: ignore[arg-type]
         password=config.password,  # type: ignore[arg-type]
         base_url=config.base_url,
-    )
+        default_page_size=1000,  # Use improved pagination
+        logger=logger,  # Pass logger for better debugging
+    ) as client:
+        # Get the classes of each report in each report group
+        report_classes = config.get_reports()
 
-    # Get the classes of each report in each report group
-    report_classes = config.get_reports()
+        exceptions: list[str] = []
+        raise_exception = config.debug
 
-    exceptions = []
-    raise_exception = config.debug
+        # Run each report from the list of classes
+        for report_class in report_classes:
+            try:
+                report = report_class(
+                    client=client,
+                    start_date=config.start_date,  # type: ignore[arg-type]
+                    end_date=config.end_date,
+                    output_folder=config.output_folder,
+                    debug=config.debug,
+                    config=config,
+                )
+                report.run()
+            except Exception as e:
+                error_msg = f"Failed to execute {report_class.__name__}: {str(e)}"
+                logger.error(error_msg)
 
-    # Run each report from the list of classes
-    for report_class in report_classes:
-        try:
-            report = report_class(
-                client=client,
-                start_date=config.start_date,  # type: ignore[arg-type]
-                end_date=config.end_date,
-                output_folder=config.output_folder,
-                debug=config.debug,
-                config=config,
+                if raise_exception:
+                    raise ReportExecutionError(error_msg) from e
+                exceptions.append(traceback.format_exc())
+
+        if exceptions:
+            logger.error("Configuration: %s", config.model_dump(exclude={"password"}))
+            raise ReportExecutionError(
+                f"Failed to execute {len(exceptions)} report(s)", exceptions
             )
-            report.run()
-        except Exception as e:
-            error_msg = f"Failed to execute {report_class.__name__}: {str(e)}"
-            logger.error(error_msg)
-
-            if raise_exception:
-                raise ReportExecutionError(error_msg) from e
-            exceptions.append(traceback.format_exc())
-
-    if exceptions:
-        logger.error("Configuration: %s", config.model_dump(exclude={"password"}))
-        raise ReportExecutionError(
-            f"Failed to execute {len(exceptions)} report(s)", exceptions
-        )
 
 
 if __name__ == "__main__":

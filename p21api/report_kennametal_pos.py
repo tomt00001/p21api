@@ -20,8 +20,9 @@ class ReportKennametalPos(ReportBase):
                 self._client.get_current_month_end_date(self._start_date),
             )
         )
-        sales_data, url = self._client.query_odataservice(
-            "p21_sales_history_view",
+        # Use improved pagination-aware query method
+        sales_data, _ = self._client.query_odataservice(
+            endpoint="p21_sales_history_view",
             selects=[
                 "bill2_country",
                 "cogs_amount",
@@ -43,6 +44,7 @@ class ReportKennametalPos(ReportBase):
                 "salesrep_id",
             ],
             filters=filters,
+            page_size=500,  # Explicit page size for large sales data
         )
         if not sales_data:
             return
@@ -50,8 +52,9 @@ class ReportKennametalPos(ReportBase):
         if self._debug:
             etl.tocsv(sales, self.file_name("sales"))
 
+        # Use improved post method with explicit parameters
         customer_data = self._client.post_odataservice(
-            "p21_view_customer",
+            endpoint="p21_view_customer",
             selects=[
                 "customer_id",
                 "customer_id_string",
@@ -60,14 +63,15 @@ class ReportKennametalPos(ReportBase):
                 "state_excise_tax_exemption_no",
             ],
             filters=["customer_id ne 1"],
-            orderby=["customer_id asc"],
+            order_by=["customer_id asc"],  # Use new parameter name
+            page_size=1000,  # Explicit page size for customer data
         )
         customer = etl.fromdicts(customer_data)
         if self._debug:
             etl.tocsv(customer, self.file_name("customer"))
 
-        supplier_data, url = self._client.query_odataservice(
-            "p21_view_inventory_supplier",
+        supplier_data, _ = self._client.query_odataservice(
+            endpoint="p21_view_inventory_supplier",
             selects=[
                 "cost",
                 "inv_mast_uid",
@@ -75,6 +79,7 @@ class ReportKennametalPos(ReportBase):
                 "supplier_id",
             ],
             filters=supplier_filters,
+            page_size=500,  # Explicit page size for supplier data
         )
         if not supplier_data:
             return

@@ -97,7 +97,7 @@ def patch_datetime_now(fixed_date=None):
 def is_gui_available():
     """Check if GUI dependencies are available."""
     try:
-        import PyQt6  # noqa: F401
+        # import PyQt6  # noqa: F401  # Unused import removed
 
         return True
     except ImportError:

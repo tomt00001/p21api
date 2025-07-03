@@ -51,8 +51,7 @@ class TestReportDailySales:
         report._run()
 
         mock_odata_client.query_odataservice.assert_called_once_with(
-            "p21_view_invoice_hdr",
-            start_date=datetime(2024, 1, 1),
+            endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",
                 "freight",
@@ -65,7 +64,9 @@ class TestReportDailySales:
                 "year_for_period",
                 "salesrep_id",
             ],
+            start_date=datetime(2024, 1, 1),
             order_by=["year_for_period asc", "invoice_no asc"],
+            page_size=1000,
         )
         mock_fromdicts.assert_called_once_with(sample_invoice_data)
         mock_tocsv.assert_called_once()

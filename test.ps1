@@ -22,6 +22,9 @@
 .PARAMETER NoCov
     Disable coverage reporting (overrides pytest.ini settings)
 
+.PARAMETER TypeCheck
+    Pyright type checking before running tests
+
 .EXAMPLE
     .\test.ps1
     Run all tests with verbose output
@@ -41,6 +44,10 @@
 .EXAMPLE
     .\test.ps1 -NoCov
     Run tests without coverage reporting
+
+.EXAMPLE
+    .\test.ps1 -TypeCheck
+    Run tests without type checking
 #>
 
 param(
@@ -49,6 +56,7 @@ param(
     [switch]$Fast,
     [switch]$Parallel,
     [switch]$NoCov,
+    [switch]$TypeCheck,
     [switch]$Help
 )
 
@@ -61,6 +69,34 @@ if ($Help) {
 # Change to script directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ScriptDir
+
+# Run type checking first (unless skipped)
+if ($TypeCheck) {
+    Write-Host "Running type checking with pyright..." -ForegroundColor Green
+    Write-Host "Command: uvx --with-requirements pyproject.toml pyright" -ForegroundColor Cyan
+    Write-Host ("-" * 60) -ForegroundColor Gray
+
+    try {
+        & uvx --with-requirements pyproject.toml pyright
+        $typeCheckExitCode = $LASTEXITCODE
+
+        if ($typeCheckExitCode -eq 0) {
+            Write-Host "✅ Type checking passed!" -ForegroundColor Green
+        } else {
+            Write-Host "❌ Type checking failed with exit code: $typeCheckExitCode" -ForegroundColor Red
+            Write-Host "Fix type errors before running tests." -ForegroundColor Yellow
+            exit $typeCheckExitCode
+        }
+    } catch {
+        Write-Host "💥 Error running pyright: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Make sure pyright is available via uvx." -ForegroundColor Yellow
+        exit 1
+    }
+
+    Write-Host ("-" * 60) -ForegroundColor Gray
+} else {
+    Write-Host "⚠️  Type checking skipped" -ForegroundColor Yellow
+}
 
 Write-Host "Running tests with uv..." -ForegroundColor Green
 Write-Host "Working directory: $(Get-Location)" -ForegroundColor Gray

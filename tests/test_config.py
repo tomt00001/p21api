@@ -1,6 +1,10 @@
+# Standard library imports
 from typing import Tuple, Type
 
+# Local imports
 from p21api.config import Config
+
+# Third-party imports
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 
 

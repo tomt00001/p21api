@@ -34,6 +34,8 @@ class TestMain:
         mock_show_gui.return_value = ({"username": "test_user"}, True)
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         # Call main
@@ -47,6 +49,8 @@ class TestMain:
             username="test_user",
             password="test_password",
             base_url="http://example.com",
+            default_page_size=1000,
+            logger=main.logger,
         )
 
     @patch("main.show_gui_dialog")
@@ -81,6 +85,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         main.main()
@@ -89,6 +95,8 @@ class TestMain:
             username="test_user",
             password="test_password",
             base_url="http://example.com",
+            default_page_size=1000,
+            logger=main.logger,
         )
 
     @patch("main.Config")
@@ -200,6 +208,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         main.main()
@@ -242,6 +252,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         with pytest.raises(
@@ -278,6 +290,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         with pytest.raises(main.ReportExecutionError):
@@ -316,6 +330,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
 
         mock_client = Mock()
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
         main.main()

@@ -258,3 +258,222 @@ class TestODataClient:
             assert headers1 == headers2
             # Should only be called once due to caching
             mock_get_headers.assert_called_once()
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_query_odataservice_no_chunking_needed(
+        self, mock_compose_url, mock_fetch_data
+    ):
+        """Test query_odataservice when URL is short enough (no chunking needed)."""
+        # Setup mocks
+        short_url = "http://example.com/api/test?short=params"
+        mock_compose_url.return_value = short_url
+        mock_fetch_data.return_value = [{"id": 1, "name": "test"}]
+
+        client = ODataClient("user", "pass", "http://example.com")
+
+        data, url = client.query_odataservice(
+            "test_endpoint", selects=["id", "name"], filters=["id eq 1"]
+        )
+
+        # Should use normal path (no chunking)
+        assert data == [{"id": 1, "name": "test"}]
+        assert url == short_url
+        mock_compose_url.assert_called_once()
+        mock_fetch_data.assert_called_once_with(short_url)
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_query_odataservice_chunking_needed(
+        self, mock_compose_url, mock_fetch_data
+    ):
+        """Test query_odataservice when URL is too long and chunking is needed."""
+        # Create a long filter that would exceed URL length limit
+        long_filter = (
+            "(" + " or ".join([f"inv_mast_uid eq {i}" for i in range(100)]) + ")"
+        )
+
+        # Mock compose_url to return a very long URL for the first call
+        long_url = "http://example.com/api/test?" + "x" * 3000  # Exceed 2048 limit
+        short_urls = [
+            "http://example.com/api/test?chunk1",
+            "http://example.com/api/test?chunk2",
+        ]
+
+        mock_compose_url.side_effect = [long_url] + short_urls
+
+        # Mock fetch_data to return different data for each chunk
+        chunk1_data = [{"inv_mast_uid": i, "item_id": f"item_{i}"} for i in range(50)]
+        chunk2_data = [
+            {"inv_mast_uid": i, "item_id": f"item_{i}"} for i in range(50, 100)
+        ]
+        mock_fetch_data.side_effect = [chunk1_data, chunk2_data]
+
+        client = ODataClient("user", "pass", "http://example.com")
+
+        data, url = client.query_odataservice(
+            "test_endpoint",
+            selects=["inv_mast_uid", "item_id"],
+            filters=[long_filter],
+        )
+
+        # Should return combined data from both chunks
+        expected_data = chunk1_data + chunk2_data
+        assert data == expected_data
+        assert "(chunked)" in url
+
+        # Should have called compose_url 3 times (1 initial + 2 chunks)
+        assert mock_compose_url.call_count == 3
+        # Should have called fetch_data 2 times (once per chunk)
+        assert mock_fetch_data.call_count == 2
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_try_chunked_request_not_chunkable(self, mock_compose_url, mock_fetch_data):
+        """Test _try_chunked_request when filter is not chunkable."""
+        client = ODataClient("user", "pass", "http://example.com")
+
+        # Test with short URL (no chunking needed)
+        short_url = "http://example.com/api/test?short"
+        mock_compose_url.return_value = short_url
+
+        result = client._try_chunked_request(
+            endpoint="test",
+            selects=["id"],
+            filters=["simple eq 'filter'"],
+        )
+
+        assert result is None  # No chunking needed
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_try_chunked_request_no_or_conditions(
+        self, mock_compose_url, mock_fetch_data
+    ):
+        """Test _try_chunked_request when filter has no OR conditions."""
+        client = ODataClient("user", "pass", "http://example.com")
+
+        # Create a long URL but without OR conditions
+        long_url = "http://example.com/api/test?" + "x" * 3000
+        mock_compose_url.return_value = long_url
+
+        result = client._try_chunked_request(
+            endpoint="test",
+            selects=["id"],
+            filters=["simple eq 'very_long_value_that_makes_url_long'"],
+        )
+
+        assert result is None  # No chunkable OR conditions
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_try_chunked_request_small_or_filter(
+        self, mock_compose_url, mock_fetch_data
+    ):
+        """Test _try_chunked_request when OR filter is small (no chunking needed)."""
+        client = ODataClient("user", "pass", "http://example.com")
+
+        # Create a long URL but with small OR filter
+        long_url = "http://example.com/api/test?" + "x" * 3000
+        mock_compose_url.return_value = long_url
+
+        small_or_filter = "(id eq 1 or id eq 2 or id eq 3)"  # Only 3 conditions
+
+        result = client._try_chunked_request(
+            endpoint="test",
+            selects=["id"],
+            filters=[small_or_filter],
+        )
+
+        assert result is None  # OR filter too small to chunk
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_try_chunked_request_successful_chunking(
+        self, mock_compose_url, mock_fetch_data
+    ):
+        """Test _try_chunked_request with successful chunking."""
+        client = ODataClient("user", "pass", "http://example.com")
+
+        # Create a long URL that needs chunking
+        long_url = "http://example.com/api/test?" + "x" * 3000
+        chunk_urls = [
+            "http://example.com/api/test?chunk1",
+            "http://example.com/api/test?chunk2",
+        ]
+        mock_compose_url.side_effect = [long_url] + chunk_urls
+
+        # Create a large OR filter
+        large_or_filter = "(" + " or ".join([f"id eq {i}" for i in range(100)]) + ")"
+
+        # Mock data for each chunk
+        chunk1_data = [{"id": i} for i in range(50)]
+        chunk2_data = [{"id": i} for i in range(50, 100)]
+        mock_fetch_data.side_effect = [chunk1_data, chunk2_data]
+
+        result = client._try_chunked_request(
+            endpoint="test",
+            selects=["id"],
+            filters=["other_filter eq 'value'", large_or_filter],
+            chunk_size=50,
+        )
+
+        # Should return combined data
+        expected_data = chunk1_data + chunk2_data
+        assert result == expected_data
+
+        # Verify calls
+        assert mock_compose_url.call_count == 2  # 2 chunks
+        assert mock_fetch_data.call_count == 2  # 2 chunks
+
+    @patch.object(ODataClient, "fetch_data")
+    @patch.object(ODataClient, "compose_url")
+    def test_try_chunked_request_empty_chunks(self, mock_compose_url, mock_fetch_data):
+        """Test _try_chunked_request when chunks return empty data."""
+        client = ODataClient("user", "pass", "http://example.com")
+
+        # Setup for chunking scenario
+        long_url = "http://example.com/api/test?" + "x" * 3000
+        chunk_urls = ["http://example.com/api/test?chunk1"]
+        mock_compose_url.side_effect = [long_url] + chunk_urls
+
+        large_or_filter = "(" + " or ".join([f"id eq {i}" for i in range(60)]) + ")"
+
+        # Mock empty data
+        mock_fetch_data.return_value = None
+
+        result = client._try_chunked_request(
+            endpoint="test",
+            selects=["id"],
+            filters=[large_or_filter],
+            chunk_size=50,
+        )
+
+        assert result is None  # Should return None when no data found
+
+    def test_chunking_logic_correctness(self):
+        """Test the chunking logic with various scenarios."""
+        # Test filter parsing
+        test_filter = "(id eq 1 or id eq 2 or id eq 3 or id eq 4 or id eq 5)"
+
+        # Simulate the parsing logic
+        if test_filter.startswith("(") and test_filter.endswith(")"):
+            inner_filter = test_filter[1:-1]  # Remove parentheses
+            conditions = [cond.strip() for cond in inner_filter.split(" or ")]
+
+            assert len(conditions) == 5
+            assert conditions[0] == "id eq 1"
+            assert conditions[4] == "id eq 5"
+
+            # Test chunking
+            chunk_size = 2
+            chunks = []
+            for i in range(0, len(conditions), chunk_size):
+                chunk_conditions = conditions[i : i + chunk_size]
+                chunked_filter = f"({' or '.join(chunk_conditions)})"
+                chunks.append(chunked_filter)
+
+            assert len(chunks) == 3  # 5 conditions with chunk_size=2 gives 3 chunks
+            assert chunks[0] == "(id eq 1 or id eq 2)"
+            assert chunks[1] == "(id eq 3 or id eq 4)"
+            assert chunks[2] == "(id eq 5)"

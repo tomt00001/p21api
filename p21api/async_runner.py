@@ -6,7 +6,7 @@ improving overall application performance.
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
 
 from .config import Config
@@ -62,12 +62,12 @@ class AsyncReportRunner:
         results: Dict[str, Any] = {"successful": [], "failed": [], "exceptions": []}
 
         # Create report instances
-        reports = []
+        reports: List[tuple[str, ReportBase]] = []
         for report_class in report_classes:
             try:
                 report = report_class(
                     client=client,
-                    start_date=config.start_date,  # type: ignore[arg-type]
+                    start_date=config.start_date,
                     end_date=config.end_date,
                     output_folder=config.output_folder,
                     debug=config.debug,
@@ -82,7 +82,7 @@ class AsyncReportRunner:
         # Run reports concurrently
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all report tasks
-            future_to_report = {
+            future_to_report: dict[Future[bool], str] = {
                 executor.submit(self._run_single_report, name, report): name
                 for name, report in reports
             }

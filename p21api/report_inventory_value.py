@@ -19,11 +19,13 @@ class ReportInventoryValue(ReportBase):
             year_ago_date,
             self._start_date,
         )
-        sales_data, url = self._client.query_odataservice(
+        sales_data, _ = self._client.query_odataservice(
             "p21_sales_history_view",
             selects=["item_id", "invoice_date"],
             filters=sales_filters,
             order_by=["item_id asc", "invoice_date desc"],
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         sales = etl.fromdicts(sales_data)
 
@@ -41,7 +43,7 @@ class ReportInventoryValue(ReportBase):
             year_ago_date,
             self._start_date,
         )
-        po_line_data, url = self._client.query_odataservice(
+        po_line_data, _ = self._client.query_odataservice(
             "p21_view_po_line",
             selects=[
                 "item_id",
@@ -50,6 +52,8 @@ class ReportInventoryValue(ReportBase):
             ],
             filters=po_line_filters,
             order_by=["item_id asc", "date_created desc"],
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         po_line = etl.fromdicts(po_line_data)
 
@@ -65,7 +69,7 @@ class ReportInventoryValue(ReportBase):
 
         # Inventory Value
         inventory_value_filters = ["fifo_layer_qty gt 0"]
-        inventory_value_data, url = self._client.query_odataservice(
+        inventory_value_data, _ = self._client.query_odataservice(
             "p21_view_inventory_value_report",
             selects=[
                 "item_id",
@@ -75,6 +79,8 @@ class ReportInventoryValue(ReportBase):
                 "fifo_layer_value",
             ],
             filters=inventory_value_filters,
+            # use_pagination removed; rely on page_size
+            page_size=1000,
         )
         inventory_value = etl.fromdicts(inventory_value_data)
         reordered_inventory_value = etl.cut(
