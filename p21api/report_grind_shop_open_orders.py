@@ -10,7 +10,7 @@ class ReportGrindShopOpenOrders(ReportBase):
 
     def _run(self) -> None:
         # Get order header data for grind shop orders (taker = 'RC')
-        order_hdr_data, url = self._client.query_odataservice(
+        order_hdr_data, _ = self._client.query_odataservice(
             endpoint="p21_view_oe_hdr",
             selects=[
                 "customer_id",
@@ -39,14 +39,12 @@ class ReportGrindShopOpenOrders(ReportBase):
             etl.tocsv(order_hdr, self.file_name("order_hdr"))
 
         # Get order line data for the orders
-        order_no_filters = " or ".join(
-            [
-                f"order_no eq '{order_no}'"
-                for order_no in {row["order_no"] for row in order_hdr_data}
-            ]
+        order_no_filters = ReportBase.build_or_filter(
+            "order_no",
+            {row["order_no"] for row in order_hdr_data},
         )
 
-        order_line_data, url = self._client.query_odataservice(
+        order_line_data, _ = self._client.query_odataservice(
             endpoint="p21_view_oe_line",
             selects=[
                 "order_no",
@@ -74,12 +72,10 @@ class ReportGrindShopOpenOrders(ReportBase):
             etl.tocsv(order_line, self.file_name("order_line"))
 
         # Get inventory master data for item details
-        inv_mast_uid_filters = " or ".join(
-            [
-                f"inv_mast_uid eq {inv_mast_uid}"
-                for inv_mast_uid in {row["inv_mast_uid"] for row in order_line_data}
-                if inv_mast_uid is not None
-            ]
+        inv_mast_uid_filters = ReportBase.build_or_filter(
+            "inv_mast_uid",
+            {row["inv_mast_uid"] for row in order_line_data},
+            quote_strings=False,
         )
 
         if not inv_mast_uid_filters:
@@ -102,12 +98,10 @@ class ReportGrindShopOpenOrders(ReportBase):
             etl.tocsv(inv_mast, self.file_name("inv_mast"))
 
         # Get customer data
-        customer_id_filters = " or ".join(
-            [
-                f"customer_id eq {customer_id}"
-                for customer_id in {row["customer_id"] for row in order_hdr_data}
-                if customer_id is not None
-            ]
+        customer_id_filters = ReportBase.build_or_filter(
+            "customer_id",
+            {row["customer_id"] for row in order_hdr_data},
+            quote_strings=False,
         )
 
         customer_data, _ = self._client.query_odataservice(

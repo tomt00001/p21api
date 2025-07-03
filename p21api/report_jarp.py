@@ -44,11 +44,9 @@ class ReportJarp(ReportBase):
         if self._debug:
             etl.tocsv(invoice, self.file_name("invoice"))
 
-        invoice_ids_filter = " or ".join(
-            [
-                f"invoice_no eq '{invoice_id}'"
-                for invoice_id in {row["invoice_no"] for row in invoice_data}
-            ]
+        invoice_ids_filter = ReportBase.build_or_filter(
+            "invoice_no",
+            {row["invoice_no"] for row in invoice_data},
         )
         invoice_line_data, _ = self._client.query_odataservice(
             endpoint="p21_view_invoice_line",
@@ -94,12 +92,10 @@ class ReportJarp(ReportBase):
         if self._debug:
             etl.tocsv(sales_history, self.file_name("sales_history"))
 
-        supplier_id_filter = " or ".join(
-            [
-                f"supplier_id eq {supplier_id}"
-                for supplier_id in {row["supplier_id"] for row in sales_history_data}
-                if supplier_id is not None
-            ]
+        supplier_id_filter = ReportBase.build_or_filter(
+            "supplier_id",
+            {row["supplier_id"] for row in sales_history_data},
+            quote_strings=False,
         )
         supplier_data, _ = self._client.query_odataservice(
             endpoint="p21_view_inventory_supplier",

@@ -47,11 +47,9 @@ class ReportOpenOrders(ReportBase):
         order = etl.fromdicts(order_data)
         if self._debug:
             etl.tocsv(order, self.file_name("order"))
-        order_no_filters = " or ".join(
-            [
-                f"order_no eq '{order_no}'"
-                for order_no in {row["order_no"] for row in order_data}
-            ]
+        order_no_filters = ReportBase.build_or_filter(
+            "order_no",
+            {row["order_no"] for row in order_data},
         )
 
         order_ack_line_data, _ = self._client.query_odataservice(
