@@ -24,6 +24,14 @@ class Config(BaseSettings):
     base_url: str = Field(default="https://christensenmachinery.epicordistribution.com")
     username: str | None = Field(default=None)
     password: str | None = Field(default=None)
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def strip_password(cls, value: str | None) -> str | None:
+        if value is not None:
+            return value.strip()
+        return value
+
     output_folder: str = Field(default="output\\")
     report_groups: str = Field(default="monthly")
     debug: bool = Field(default=False)

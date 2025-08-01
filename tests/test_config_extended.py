@@ -117,7 +117,7 @@ class TestConfigEdgeCases:
 
         # Should handle whitespace appropriately
         assert config.username == "  test  "
-        assert config.password == "  pass  "
+        assert config.password == "pass"
 
     def test_config_very_large_date_range(self):
         """Test config with very large date range."""
