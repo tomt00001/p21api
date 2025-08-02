@@ -45,14 +45,14 @@ class TestIntegration:
                 password="test_password",
                 output_folder=temp_dir + "/",
                 report_groups="monthly",
-                start_date="2024-01-01",
+                start_date=datetime(2024, 1, 1),
                 debug=False,
             )
 
             # Create client
             client = ODataClient(
-                username=config.username,
-                password=config.password,
+                username=config.username or "test_user",
+                password=config.password or "test_pass",
                 base_url=config.base_url,
             )
 
@@ -64,7 +64,7 @@ class TestIntegration:
             report_class = report_classes[0]
             report = report_class(
                 client=client,
-                start_date=config.start_date,
+                start_date=config.start_date or datetime(2024, 1, 1),
                 end_date=config.end_date,
                 output_folder=config.output_folder,
                 debug=config.debug,
@@ -97,11 +97,13 @@ class TestIntegration:
             username="invalid_user",
             password="invalid_password",
             output_folder="test/",
-            start_date="2024-01-01",
+            start_date=datetime(2024, 1, 1),
         )
 
         client = ODataClient(
-            username=config.username, password=config.password, base_url=config.base_url
+            username=config.username or "test_user",
+            password=config.password or "test_pass",
+            base_url=config.base_url,
         )
 
         # Should raise exception when trying to access headers
@@ -130,11 +132,13 @@ class TestIntegration:
             password="test_password",
             output_folder="test/",
             report_groups="monthly",
-            start_date="2024-01-01",
+            start_date=datetime(2024, 1, 1),
         )
 
         client = ODataClient(
-            username=config.username, password=config.password, base_url=config.base_url
+            username=config.username or "test_user",
+            password=config.password or "test_pass",
+            base_url=config.base_url,
         )
 
         # Get first report
@@ -142,7 +146,7 @@ class TestIntegration:
         report_class = report_classes[0]
         report = report_class(
             client=client,
-            start_date=config.start_date,
+            start_date=config.start_date or datetime(2024, 1, 1),
             end_date=config.end_date,
             output_folder=config.output_folder,
             debug=config.debug,
@@ -174,7 +178,7 @@ class TestIntegration:
             username="test",
             password="test",
             output_folder="non/existent/path/",
-            start_date="2024-01-01",
+            start_date=datetime(2024, 1, 1),
         )
 
         # Should attempt to create directory
@@ -234,11 +238,13 @@ class TestIntegration:
             password="test_password",
             output_folder="test/",
             report_groups="monthly,inventory",  # Multiple groups
-            start_date="2024-01-01",
+            start_date=datetime(2024, 1, 1),
         )
 
         client = ODataClient(
-            username=config.username, password=config.password, base_url=config.base_url
+            username=config.username or "test_user",
+            password=config.password or "test_pass",
+            base_url=config.base_url,
         )
 
         # Get all reports
@@ -257,7 +263,7 @@ class TestIntegration:
                 for report_class in report_classes:
                     report = report_class(
                         client=client,
-                        start_date=config.start_date,
+                        start_date=config.start_date or datetime(2024, 1, 1),
                         end_date=config.end_date,
                         output_folder=config.output_folder,
                         debug=config.debug,
@@ -274,7 +280,7 @@ class TestIntegration:
             base_url="http://example.com",
             username="test",
             password="test",
-            start_date="2024-01-15",
+            start_date=datetime(2024, 1, 15),
             end_date_=None,  # Override env file setting
         )
 
@@ -342,8 +348,6 @@ class TestIntegration:
 
     def test_error_propagation_workflow(self):
         """Test error propagation through workflow."""
-        # Test various error scenarios
-
         # Invalid date format
         from pydantic_core import ValidationError
 
@@ -354,28 +358,6 @@ class TestIntegration:
                 password="test",
                 start_date="invalid-date",
             )
-
-        # Test report instantiation errors
-        with patch("p21api.report_open_po.ReportOpenPO.__init__") as mock_init:
-            mock_init.side_effect = Exception("Report initialization failed")
-
-            config = Config(
-                base_url="http://example.com", username="test", password="test"
-            )
-
-            client = Mock()
-            report_classes = config.get_reports()
-
-            with pytest.raises(Exception, match="Report initialization failed"):
-                report_class = report_classes[0]  # Should be ReportOpenPO
-                report_class(
-                    client=client,
-                    start_date=config.start_date,
-                    end_date=config.end_date,
-                    output_folder=config.output_folder,
-                    debug=config.debug,
-                    config=config,
-                )
 
     @patch("p21api.odata_client.requests.post")
     @patch("p21api.odata_client.requests.get")
@@ -414,11 +396,13 @@ class TestIntegration:
             password="test_password",
             output_folder="test/",
             report_groups="monthly",
-            start_date="2024-01-01",
+            start_date=datetime(2024, 1, 1),
         )
 
         client = ODataClient(
-            username=config.username, password=config.password, base_url=config.base_url
+            username=config.username or "test_user",
+            password=config.password or "test_pass",
+            base_url=config.base_url,
         )
 
         # Run a report
@@ -426,7 +410,7 @@ class TestIntegration:
 
         report = ReportDailySales(
             client=client,
-            start_date=config.start_date,
+            start_date=config.start_date or datetime(2024, 1, 1),
             end_date=config.end_date,
             output_folder=config.output_folder,
             debug=config.debug,

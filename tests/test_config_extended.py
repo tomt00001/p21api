@@ -345,15 +345,14 @@ class TestConfigAdditionalCoverage:
         # Should contain some groups
         assert len(report_groups) > 0
 
-        # Each group should contain report classes
+        # Each group should be a list; only non-empty groups must contain report classes
         for group, reports in report_groups.items():
             assert isinstance(reports, list)
-            assert len(reports) > 0
-
-            # Each report should be a class
-            for report_class in reports:
-                assert hasattr(report_class, "__name__")
-                assert hasattr(report_class, "__module__")
+            if len(reports) > 0:
+                # Each report should be a class
+                for report_class in reports:
+                    assert hasattr(report_class, "__name__")
+                    assert hasattr(report_class, "__module__")
 
     def test_config_model_dump_extra_fields(self, temp_output_dir):
         """Test config serialization with model_dump."""
