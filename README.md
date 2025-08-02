@@ -1,4 +1,31 @@
+## Commit Message Guidelines
+
+- **Use imperative mood:** (“Add”, “Fix”, “Update”, not “Added”, “Fixed”, “Updated”)
+- **Be concise and descriptive:** Summarize the major changes and the reason for the change.
+- **Limit summary line to 72 characters:** Keep the first line concise and readable in logs.
+- **Separate summary from body with a blank line:** If you add more detail, leave a blank line after the summary.
+- **Focus on intent and impact:** Explain what was changed and why, not just what files were touched.
+- **Reference issues or PRs if relevant:** e.g., “Fix report path bug (#42)”
+- **Group related changes:** Avoid mixing unrelated changes in a single commit.
+- **Avoid generic messages:** Be specific about what and why, not just “update” or “fix”.
+
+**Examples:**
+
+```
+Refactor report runner for async execution and improved error handling
+
+Fix inventory report path handling to prevent directory traversal
+
+Add Windows-only PowerShell setup instructions to README
+
+Remove pip install instructions; enforce uv-only workflow
+
+Update test.ps1: add coverage, fail-fast, and env var support
+```
+
 # P21 API Data Exporter
+
+> **Note:** This project is Windows-only. All instructions, code, and scripts assume a Windows environment and PowerShell usage. Bash/Unix shell commands are not supported.
 
 A robust Python application for extracting and processing data from P21 ERP systems via OData API. This tool provides automated data export capabilities with configurable report generation, comprehensive error handling, and both GUI and command-line interfaces.
 
@@ -26,20 +53,12 @@ A robust Python application for extracting and processing data from P21 ERP syst
 
 ## 🛠️ Installation
 
-### Using uv (Recommended)
+### Installation (uv only)
 
-```bash
+```powershell
 git clone <repository-url>
 cd p21api
 uv sync
-```
-
-### Using pip
-
-```bash
-git clone <repository-url>
-cd p21api
-pip install -e .
 ```
 
 ## ⚙️ Configuration
@@ -48,7 +67,7 @@ pip install -e .
 
 Create an `env` file in the project root:
 
-```bash
+```text
 # P21 Connection Settings
 base_url=https://your-p21-server.com
 username=your_username
@@ -74,15 +93,15 @@ show_gui=false
 
 ### Command Line Interface
 
-```bash
+```powershell
 # Run with environment configuration
-python main.py
+uv run python main.py
 
 # Enable debug mode
-DEBUG=true python main.py
+$env:DEBUG='true'; uv run python main.py
 
 # Show GUI for configuration
-SHOW_GUI=true python main.py
+$env:SHOW_GUI='true'; uv run python main.py
 ```
 
 ### Programmatic Usage
@@ -115,8 +134,8 @@ results = await runner.run_reports_async(
 
 Launch the GUI for interactive configuration:
 
-```bash
-python main.py --gui
+```powershell
+uv run python main.py --gui
 ```
 
 ## 📊 Report Types
@@ -144,7 +163,7 @@ python main.py --gui
 
 ### Setup Development Environment
 
-```bash
+```powershell
 # Install with development dependencies
 uv sync --group dev
 
@@ -152,16 +171,16 @@ uv sync --group dev
 pre-commit install
 
 # Run tests
-pytest
+./test.ps1
 
 # Run tests with coverage
-pytest --cov=p21api --cov-report=html
+./test.ps1 -Coverage
 
 # Format code
-ruff format .
+uv run ruff format .
 
 # Lint code
-ruff check . --fix
+uv run ruff check . --fix
 ```
 
 ### Project Structure
@@ -186,21 +205,21 @@ p21api/
 
 ### Running Tests
 
-```bash
+```powershell
 # Run all tests
-pytest
+./test.ps1
 
 # Run specific test file
-pytest tests/test_config.py
+./test.ps1 -Path tests/test_config.py
 
 # Run with coverage
-pytest --cov=p21api --cov-report=term-missing
+./test.ps1 -Coverage
 
 # Run performance tests
-pytest -m performance
+./test.ps1 -Fast
 
 # Run integration tests
-pytest -m integration
+./test.ps1 # (integration tests are included by default)
 ```
 
 ## 📈 Performance
