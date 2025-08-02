@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
 from .report_daily_sales import ReportDailySales
+from .report_dead_inventory import ReportDeadInventory
 from .report_grind_shop_open_orders import ReportGrindShopOpenOrders
 from .report_jarp import ReportJarp
 from .report_kennametal_pos import ReportKennametalPos
@@ -162,7 +163,9 @@ class Config(BaseSettings):
                 ReportJarp,
                 ReportGrindShopOpenOrders,
             ],
-            "inventory": [],
+            "inventory": [
+                ReportDeadInventory,
+            ],
         }
 
     @staticmethod
