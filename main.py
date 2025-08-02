@@ -1,5 +1,6 @@
 import logging
 import traceback
+from pathlib import Path
 from typing import NoReturn
 
 from p21api.config import Config
@@ -48,9 +49,17 @@ def main() -> NoReturn | None:
         ReportExecutionError: If any reports fail and debug mode is enabled, or
                              if multiple reports fail (collected exceptions)
     """
+
+    import os
+
     config = Config()
 
-    if config.should_show_gui:
+    # Only show GUI if not running under pytest, unless override is set
+    suppress_gui = (
+        os.environ.get("PYTEST_CURRENT_TEST")
+        and os.environ.get("P21API_SUPPRESS_GUI", "1") != "0"
+    )
+    if config.should_show_gui and not suppress_gui:
         data, save_clicked = show_gui_dialog(config=config)
         if not save_clicked or not data:
             return
@@ -121,4 +130,40 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    main()
+    import datetime
+    import sys
+    from pathlib import Path
+
+    try:
+        main()
+    except Exception as exc:
+        # Compose error log filename with timestamp for uniqueness
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_filename = f"p21api_error_{timestamp}.log"
+        log_path = Path.cwd() / log_filename
+        # Gather error details
+        error_type = type(exc).__name__
+        error_message = str(exc)
+        tb = traceback.format_exc()
+        log_content = (
+            f"P21 API Exporter Crash Log\n"
+            f"Timestamp: {timestamp}\n"
+            f"Error Type: {error_type}\n"
+            f"Error Message: {error_message}\n"
+            f"\nTraceback:\n{tb}\n"
+        )
+        try:
+            log_path.write_text(log_content, encoding="utf-8")
+            logger.error(
+                f"A fatal error occurred. Details have been saved to: {log_path}"
+            )
+            logger.error("Please send this file to support for troubleshooting.")
+        except Exception as file_exc:
+            logger.error(
+                "A fatal error occurred, and the error log could not be written:"
+            )
+            logger.error(str(file_exc))
+            logger.error("Original error:")
+            logger.error(log_content)
+        # Exit with error code
+        sys.exit(1)

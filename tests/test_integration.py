@@ -304,7 +304,9 @@ class TestIntegration:
     @patch("main.show_gui_dialog")
     @patch("p21api.odata_client.requests.post")
     @patch("petl.tocsv")
-    def test_gui_integration_workflow(self, mock_tocsv, mock_post, mock_gui):
+    def test_gui_integration_workflow(
+        self, mock_tocsv, mock_post, mock_gui, monkeypatch
+    ):
         """Test GUI integration in complete workflow."""
         # Setup mocks
         mock_auth_response = Mock()
@@ -321,6 +323,8 @@ class TestIntegration:
         }
         mock_gui.return_value = (gui_data, True)
 
+        # Ensure GUI is not suppressed for this test
+        monkeypatch.setenv("P21API_SUPPRESS_GUI", "0")
         # Import and run main
         import main
 
