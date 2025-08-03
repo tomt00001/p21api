@@ -30,10 +30,8 @@ class TestReportDeadInventory:
         mock_odata_client.query_odataservice.side_effect = [
             # 1. inv_loc (item_id, qty_on_hand, standard_cost)
             ([{"item_id": "A", "qty_on_hand": 10, "standard_cost": 5.0}], "url1"),
-            # 2. invoice_line (item_id, invoice_no)
-            ([{"item_id": "A", "invoice_no": 123}], "url2"),
-            # 3. invoice_hdr (invoice_no, invoice_date BEFORE cutoff)
-            ([{"invoice_no": 123, "invoice_date": "2023-12-31"}], "url3"),
+            # 2. sales_history (item_id, invoice_date BEFORE cutoff)
+            ([{"item_id": "A", "invoice_date": "2023-12-31"}], "url2"),
         ]
         mock_table = Mock()
         mock_fromdicts.return_value = mock_table
