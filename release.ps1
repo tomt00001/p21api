@@ -117,6 +117,11 @@ if ($Release) {
         $ghResult = gh release create @ghArgs 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Release $newTag created successfully!"
+            # Open the GitHub release page in the default browser
+            $repoUrl = "https://github.com/tomt00001/p21api"
+            $releaseUrl = "$repoUrl/releases/tag/$newTag"
+            Write-Host "[INFO] Opening release page: $releaseUrl"
+            Start-Process $releaseUrl
         } else {
             Write-Host "[ERROR] gh release create failed. Output: $ghResult"
             exit 1
