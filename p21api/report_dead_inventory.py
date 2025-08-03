@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 import petl as etl
 
@@ -47,52 +47,21 @@ class ReportDeadInventory(ReportBase):
                         except (TypeError, ValueError):
                             pass
 
-        # Fetch all invoice lines (all time) to determine last sales date
-        invoice_lines_raw, _ = self._client.query_odataservice(
-            endpoint="p21_view_invoice_line",
-            selects=["item_id", "invoice_no"],
+        # Fetch all sales history lines (all time) to determine last sales date
+        sales_lines_raw, _ = self._client.query_odataservice(
+            endpoint="p21_sales_history_view",
+            selects=["item_id", "invoice_date"],
             page_size=1000,
         )
-        invoice_lines: List[Dict[str, Any]] = (
-            invoice_lines_raw if invoice_lines_raw else []
-        )
-        invoice_nos: Set[Any] = {
-            row["invoice_no"] for row in invoice_lines if row.get("invoice_no")
-        }
+        sales_lines: List[Dict[str, Any]] = sales_lines_raw if sales_lines_raw else []
 
-        # Fetch invoice headers to get invoice_date for each invoice_no
-        if invoice_nos:
-            try:
-                invoice_hdrs_raw, _ = self._client.query_odataservice(
-                    endpoint="p21_view_invoice_hdr",
-                    selects=["invoice_no", "invoice_date"],
-                    page_size=1000,
-                    filter=(
-                        f"invoice_no in ({','.join([str(no) for no in invoice_nos])})"
-                    ),
-                )
-            except StopIteration:
-                invoice_hdrs_raw = None
-            invoice_hdrs: List[Dict[str, Any]] = (
-                invoice_hdrs_raw if invoice_hdrs_raw else []
-            )
-            invoice_date_map_inner = {
-                row["invoice_no"]: row["invoice_date"]
-                for row in invoice_hdrs
-                if row.get("invoice_no") and row.get("invoice_date")
-            }
-        else:
-            invoice_date_map_inner = {}
-        invoice_date_map: Dict[Any, Any] = invoice_date_map_inner
-
-        # Build last sales date per item
+        # Build last sales date per item from sales history
         item_sales_dates: defaultdict[str, List[Any]] = defaultdict(list)
-        for row in invoice_lines:
+        for row in sales_lines:
             item_id = row.get("item_id")
-            invoice_no = row.get("invoice_no")
-            invoice_date = invoice_date_map.get(invoice_no)
-            if item_id and invoice_date:
-                item_sales_dates[item_id].append(invoice_date)
+            sale_date = row.get("invoice_date")
+            if item_id and sale_date:
+                item_sales_dates[item_id].append(sale_date)
         last_sales_date: Dict[str, Any] = {
             item_id: max(dates) for item_id, dates in item_sales_dates.items() if dates
         }
