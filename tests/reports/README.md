@@ -5,14 +5,11 @@ This directory contains unit tests for individual P21 API report implementations
 ## Structure
 
 - `test_report_daily_sales.py` - Tests for ReportDailySales
-- `test_report_inventory.py` - Tests for ReportInventory
-- `test_report_inventory_value.py` - Tests for ReportInventoryValue
 - `test_report_jarp.py` - Tests for ReportJarp
 - `test_report_kennametal_pos.py` - Tests for ReportKennametalPos
 - `test_report_monthly_consolidation.py` - Tests for ReportMonthlyConsolidation
 - `test_report_monthly_invoices.py` - Tests for ReportMonthlyInvoices
 - `test_report_open_orders.py` - Tests for ReportOpenOrders
-- `test_report_open_po.py` - Tests for ReportOpenPO
 - `test_report_integration.py` - Integration tests across multiple reports
 
 ## Benefits of This Structure
@@ -26,16 +23,19 @@ This directory contains unit tests for individual P21 API report implementations
 ## Running Tests
 
 Run all report tests:
+
 ```bash
 pytest tests/reports/
 ```
 
 Run tests for a specific report:
+
 ```bash
 pytest tests/reports/test_report_daily_sales.py
 ```
 
 Run with verbose output:
+
 ```bash
 pytest tests/reports/ -v
 ```
@@ -43,6 +43,7 @@ pytest tests/reports/ -v
 ## Shared Fixtures
 
 All test files use fixtures defined in the root `conftest.py`:
+
 - `mock_config` - Mock configuration object
 - `mock_odata_client` - Mock OData client
 - `sample_invoice_data` - Sample invoice data for testing

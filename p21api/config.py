@@ -9,15 +9,13 @@ from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
 from .report_daily_sales import ReportDailySales
+from .report_dead_inventory import ReportDeadInventory
 from .report_grind_shop_open_orders import ReportGrindShopOpenOrders
-from .report_inventory import ReportInventory
-from .report_inventory_value import ReportInventoryValue
 from .report_jarp import ReportJarp
 from .report_kennametal_pos import ReportKennametalPos
 from .report_monthly_consolidation import ReportMonthlyConsolidation
 from .report_monthly_invoices import ReportMonthlyInvoices
 from .report_open_orders import ReportOpenOrders
-from .report_open_po import ReportOpenPO
 
 
 class Config(BaseSettings):
@@ -174,11 +172,7 @@ class Config(BaseSettings):
                 ReportGrindShopOpenOrders,
             ],
             "inventory": [
-                ReportInventory,
-            ],
-            "po": [
-                ReportOpenPO,
-                ReportInventoryValue,
+                ReportDeadInventory,
             ],
         }
 

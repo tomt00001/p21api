@@ -1,3 +1,5 @@
+# Ignore OData metadata XML (large, generated)
+odata_schema/odata_metadata.xml
 ruff_cache/*
 
 # Ignore local develop environments

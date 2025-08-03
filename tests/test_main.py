@@ -14,7 +14,7 @@ class TestMain:
     @patch("main.ODataClient")
     @patch("main.Config")
     def test_main_with_gui_save_clicked(
-        self, mock_config_class, mock_odata_client_class, mock_show_gui
+        self, mock_config_class, mock_odata_client_class, mock_show_gui, monkeypatch
     ):
         """Test main function with GUI interaction and save clicked."""
         # Setup mocks
@@ -38,6 +38,8 @@ class TestMain:
         mock_client.__exit__ = Mock(return_value=None)
         mock_odata_client_class.return_value = mock_client
 
+        # Ensure GUI is not suppressed for this test
+        monkeypatch.setenv("P21API_SUPPRESS_GUI", "0")
         # Call main
         main.main()
 
@@ -55,7 +57,9 @@ class TestMain:
 
     @patch("main.show_gui_dialog")
     @patch("main.Config")
-    def test_main_with_gui_cancel_clicked(self, mock_config_class, mock_show_gui):
+    def test_main_with_gui_cancel_clicked(
+        self, mock_config_class, mock_show_gui, monkeypatch
+    ):
         """Test main function with GUI interaction and cancel clicked."""
         mock_config = Mock()
         mock_config.should_show_gui = True
@@ -63,6 +67,8 @@ class TestMain:
         mock_config_class.return_value = mock_config
         mock_show_gui.return_value = (None, False)
 
+        # Ensure GUI is not suppressed for this test
+        monkeypatch.setenv("P21API_SUPPRESS_GUI", "0")
         # Should return early without creating client
         main.main()
 
