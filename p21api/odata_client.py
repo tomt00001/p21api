@@ -512,6 +512,31 @@ class ODataClient:
 
         return all_data if all_data else None
 
+    def fetch_metadata(self) -> str:
+        """
+        Fetch the OData $metadata XML document for the current service.
+        Returns the XML as a string. Raises DataFetchError on failure.
+        """
+        metadata_url = f"{self.base_url}/odataservice/odata/$metadata"
+        self.logger.info(f"Fetching OData $metadata from: {metadata_url}")
+        import requests as direct_requests
+
+        try:
+            response = direct_requests.get(
+                metadata_url,
+                headers=self.headers,
+                timeout=self.DATA_TIMEOUT,
+            )
+            if response.status_code != 200:
+                raise DataFetchError(
+                    f"Failed to fetch $metadata: {response.text}\nUrl:{metadata_url}"
+                )
+            self.logger.info("Successfully fetched OData $metadata.")
+            return response.text
+        except requests.RequestException as e:
+            self.logger.error(f"Failed to fetch $metadata from {metadata_url}: {e}")
+            raise DataFetchError(f"Failed to fetch $metadata: {e}") from e
+
     def __enter__(self) -> "ODataClient":
         """Context manager entry."""
         return self
