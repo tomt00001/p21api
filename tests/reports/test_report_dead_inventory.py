@@ -32,6 +32,8 @@ class TestReportDeadInventory:
             ([{"item_id": "A", "qty_on_hand": 10, "standard_cost": 5.0}], "url1"),
             # 2. sales_history (item_id, invoice_date BEFORE cutoff)
             ([{"item_id": "A", "invoice_date": "2023-12-31"}], "url2"),
+            # 3. inventory receipts (item_id, date_created)
+            ([{"item_id": "A", "date_created": "2023-01-15"}], "url3"),
         ]
         mock_table = Mock()
         mock_fromdicts.return_value = mock_table
