@@ -125,35 +125,49 @@ def main() -> NoReturn | None:
 
 
 if __name__ == "__main__":
-    # Configure logging for when running as script
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
     import datetime
     import sys
     from pathlib import Path
 
+    # Compose error log filename with timestamp for uniqueness
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"p21api_error_{timestamp}.log"
+    log_path = Path.cwd() / log_filename
+
+    # Set up file handler BEFORE any logging occurs, so all logs are captured
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
+
+    # Now configure console logging (basicConfig only affects root logger if no
+    # handlers exist)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
     try:
         main()
     except Exception as exc:
-        # Compose error log filename with timestamp for uniqueness
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_filename = f"p21api_error_{timestamp}.log"
-        log_path = Path.cwd() / log_filename
         # Gather error details
         error_type = type(exc).__name__
         error_message = str(exc)
         tb = traceback.format_exc()
         log_content = (
-            f"P21 API Exporter Crash Log\n"
+            f"\n\nP21 API Exporter Crash Log\n"
             f"Timestamp: {timestamp}\n"
             f"Error Type: {error_type}\n"
             f"Error Message: {error_message}\n"
             f"\nTraceback:\n{tb}\n"
         )
         try:
-            log_path.write_text(log_content, encoding="utf-8")
+            # Write crash summary at the end of the log file
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(log_content)
             logger.error(
                 f"A fatal error occurred. Details have been saved to: {log_path}"
             )
@@ -165,5 +179,10 @@ if __name__ == "__main__":
             logger.error(str(file_exc))
             logger.error("Original error:")
             logger.error(log_content)
+        finally:
+            # Ensure file handler is flushed and closed
+            file_handler.flush()
+            file_handler.close()
+            root_logger.removeHandler(file_handler)
         # Exit with error code
         sys.exit(1)

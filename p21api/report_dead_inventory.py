@@ -66,6 +66,23 @@ class ReportDeadInventory(ReportBase):
             item_id: max(dates) for item_id, dates in item_sales_dates.items() if dates
         }
 
+        # Fetch all inventory receipts to determine last received date
+        receipts_raw, _ = self._client.query_odataservice(
+            endpoint="p21_view_inventory_receipts_line",
+            selects=["item_id", "date_created"],
+            page_size=1000,
+        )
+        receipts: List[Dict[str, Any]] = receipts_raw if receipts_raw else []
+        item_receipt_dates: defaultdict[str, List[Any]] = defaultdict(list)
+        for row in receipts:
+            item_id = row.get("item_id")
+            receipt_date = row.get("date_created")
+            if item_id and receipt_date:
+                item_receipt_dates[item_id].append(receipt_date)
+        last_received_date: Dict[str, Any] = {
+            item_id: max(dates) for item_id, dates in item_receipt_dates.items() if dates
+        }
+
         # Filter inventory for items not sold since cutoff (no sales after cutoff)
         dead_inventory_rows: List[Dict[str, Any]] = []
         cutoff_str = self._start_date.strftime("%Y-%m-%d")
@@ -82,12 +99,14 @@ class ReportDeadInventory(ReportBase):
                     value_on_hand = float(unit_cost) * float(qoh)
             except Exception:
                 value_on_hand = None
+            last_received = last_received_date.get(item_id, "")
             if not last_date or last_date < cutoff_str:
                 dead_inventory_rows.append(
                     {
                         "Item ID": item_id,
                         "Quantity on hand (QOH)": qoh,
                         "Last sales date": last_date or "",
+                        "Last received date": last_received,
                         "Unit cost": unit_cost,
                         "Value on hand": value_on_hand,
                     }
