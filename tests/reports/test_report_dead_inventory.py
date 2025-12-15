@@ -27,16 +27,30 @@ class TestReportDeadInventory:
         mock_config,
         mock_odata_client,
     ):
+        # 1. inv_loc returns item with supplier
+        inv_loc_row = {
+            "item_id": "A",
+            "qty_on_hand": 10,
+            "standard_cost": 5.0,
+            "primary_supplier_id": 123,
+        }
+        # 2. sales_history returns sale before cutoff
+        sales_history_row = {"item_id": "A", "invoice_date": "2023-12-31"}
+        # 3. supplier lookup returns supplier name
+        supplier_row = {"supplier_id": 123, "supplier_name": "Test Supplier"}
         mock_odata_client.query_odataservice.side_effect = [
-            # 1. inv_loc (item_id, qty_on_hand, standard_cost)
-            ([{"item_id": "A", "qty_on_hand": 10, "standard_cost": 5.0}], "url1"),
-            # 2. sales_history (item_id, invoice_date BEFORE cutoff)
-            ([{"item_id": "A", "invoice_date": "2023-12-31"}], "url2"),
-            # 3. inventory receipts (item_id, date_created)
+            ([inv_loc_row], "url1"),
+            ([sales_history_row], "url2"),
             ([{"item_id": "A", "date_created": "2023-01-15"}], "url3"),
+            ([supplier_row], "url4"),
         ]
-        mock_table = Mock()
-        mock_fromdicts.return_value = mock_table
+        captured_rows = []
+
+        def fake_fromdicts(rows):
+            captured_rows.extend(rows)
+            return Mock()
+
+        mock_fromdicts.side_effect = fake_fromdicts
         report = ReportDeadInventory(
             client=mock_odata_client,
             start_date=datetime(2024, 1, 1),
@@ -48,3 +62,7 @@ class TestReportDeadInventory:
         report._run()
         mock_fromdicts.assert_called()
         mock_tocsv.assert_called()
+        # Check that Supplier Name is present and correct
+        assert any(
+            row.get("Supplier Name") == "Test Supplier" for row in captured_rows
+        ), f"Supplier Name not found in output rows: {captured_rows}"

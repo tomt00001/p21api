@@ -18,22 +18,30 @@ class ReportDeadInventory(ReportBase):
         return "dead_inventory_"
 
     def _run(self) -> None:
-        # Fetch qty_on_hand and standard_cost from p21_view_inv_loc, aggregate by item
+        # Fetch qty_on_hand, standard_cost, and primary_supplier_id from
+        # p21_view_inv_loc, aggregate by item
         try:
             inv_loc_data, _ = self._client.query_odataservice(
                 endpoint="p21_view_inv_loc",
-                selects=["item_id", "qty_on_hand", "standard_cost"],
+                selects=[
+                    "item_id",
+                    "qty_on_hand",
+                    "standard_cost",
+                    "primary_supplier_id",
+                ],
                 page_size=1000,
             )
         except StopIteration:
             inv_loc_data = None
         qty_on_hand_map: Dict[str, float] = defaultdict(float)
         cost_map: Dict[str, float] = {}
+        supplier_id_map: Dict[str, Any] = {}
         if inv_loc_data:
             for row in inv_loc_data:
                 item_id = row.get("item_id")
                 qty = row.get("qty_on_hand")
                 cost = row.get("standard_cost")
+                supplier_id = row.get("primary_supplier_id")
                 if item_id:
                     if qty is not None:
                         try:
@@ -46,6 +54,9 @@ class ReportDeadInventory(ReportBase):
                             cost_map[item_id] = float(cost)
                         except (TypeError, ValueError):
                             pass
+                    # Use the first non-null supplier_id encountered for the item
+                    if item_id not in supplier_id_map and supplier_id is not None:
+                        supplier_id_map[item_id] = supplier_id
 
         # Fetch all sales history lines (all time) to determine last sales date
         sales_lines_raw, _ = self._client.query_odataservice(
@@ -80,8 +91,30 @@ class ReportDeadInventory(ReportBase):
             if item_id and receipt_date:
                 item_receipt_dates[item_id].append(receipt_date)
         last_received_date: Dict[str, Any] = {
-            item_id: max(dates) for item_id, dates in item_receipt_dates.items() if dates
+            item_id: max(dates)
+            for item_id, dates in item_receipt_dates.items()
+            if dates
         }
+
+        # Fetch supplier names for all unique supplier IDs
+        unique_supplier_ids = {v for v in supplier_id_map.values() if v is not None}
+        supplier_name_map: Dict[Any, str] = {}
+        if unique_supplier_ids:
+            supplier_filter = ReportBase.build_or_filter(
+                "supplier_id", unique_supplier_ids, quote_strings=False
+            )
+            supplier_rows, _ = self._client.query_odataservice(
+                endpoint="p21_view_supplier",
+                selects=["supplier_id", "supplier_name"],
+                filters=[f"({supplier_filter})"] if supplier_filter else [],
+                page_size=500,
+            )
+            if supplier_rows:
+                for row in supplier_rows:
+                    sid = row.get("supplier_id")
+                    sname = row.get("supplier_name")
+                    if sid is not None and sname is not None:
+                        supplier_name_map[sid] = sname
 
         # Filter inventory for items not sold since cutoff (no sales after cutoff)
         dead_inventory_rows: List[Dict[str, Any]] = []
@@ -100,6 +133,12 @@ class ReportDeadInventory(ReportBase):
             except Exception:
                 value_on_hand = None
             last_received = last_received_date.get(item_id, "")
+            supplier_id = supplier_id_map.get(item_id)
+            supplier_name = (
+                supplier_name_map.get(supplier_id, "")
+                if supplier_id is not None
+                else ""
+            )
             if not last_date or last_date < cutoff_str:
                 dead_inventory_rows.append(
                     {
@@ -109,6 +148,7 @@ class ReportDeadInventory(ReportBase):
                         "Last received date": last_received,
                         "Unit cost": unit_cost,
                         "Value on hand": value_on_hand,
+                        "Supplier Name": supplier_name,
                     }
                 )
 
