@@ -190,7 +190,7 @@ class TestODataClient:
 
     @patch.object(ODataClient, "fetch_data")
     @patch.object(ODataClient, "compose_url")
-    def test_query_odataservice(
+    def test_query(
         self, mock_compose_url, mock_fetch_data, sample_invoice_data
     ):
         """Test OData service querying."""
@@ -200,7 +200,7 @@ class TestODataClient:
         client = ODataClient("user", "pass", "http://example.com")
         start_date = datetime(2024, 1, 1)
 
-        data, url = client.query_odataservice(
+        data, url = client.query(
             "test_endpoint", start_date=start_date, selects=["field1", "field2"]
         )
 
@@ -210,14 +210,14 @@ class TestODataClient:
         mock_fetch_data.assert_called_once_with("http://example.com/api/test")
 
     @patch.object(ODataClient, "fetch_data")
-    def test_query_odataservice_no_data(self, mock_fetch_data):
-        """Test OData service querying with no data returned."""
+    def test_query_no_data(self, mock_fetch_data):
+        """Test query() with no data returned."""
         mock_fetch_data.return_value = None
 
         client = ODataClient("user", "pass", "http://example.com")
         start_date = datetime(2024, 1, 1)
 
-        data, url = client.query_odataservice(
+        data, url = client.query(
             "test_endpoint", start_date, selects=["field1"]
         )
 
@@ -225,8 +225,8 @@ class TestODataClient:
         assert url is not None
 
     @patch("p21api.odata_client.requests.post")
-    def test_post_odataservice(self, mock_post):
-        """Test OData service POST operation."""
+    def test_query_post(self, mock_post):
+        """Test query_post()."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -238,7 +238,7 @@ class TestODataClient:
         client = ODataClient("user", "pass", "http://example.com")
         client.headers = {"Authorization": "Bearer test_token"}
 
-        result = client.post_odataservice("test_endpoint", ["field1", "field2"])
+        result = client.query_post("test_endpoint", ["field1", "field2"])
 
         assert result == [{"success": True}]
         mock_post.assert_called()
@@ -261,10 +261,10 @@ class TestODataClient:
 
     @patch.object(ODataClient, "fetch_data")
     @patch.object(ODataClient, "compose_url")
-    def test_query_odataservice_no_chunking_needed(
+    def test_query_no_chunking_needed(
         self, mock_compose_url, mock_fetch_data
     ):
-        """Test query_odataservice when URL is short enough (no chunking needed)."""
+        """Test query() when URL is short enough (no chunking needed)."""
         # Setup mocks
         short_url = "http://example.com/api/test?short=params"
         mock_compose_url.return_value = short_url
@@ -272,7 +272,7 @@ class TestODataClient:
 
         client = ODataClient("user", "pass", "http://example.com")
 
-        data, url = client.query_odataservice(
+        data, url = client.query(
             "test_endpoint", selects=["id", "name"], filters=["id eq 1"]
         )
 
@@ -284,10 +284,10 @@ class TestODataClient:
 
     @patch.object(ODataClient, "fetch_data")
     @patch.object(ODataClient, "compose_url")
-    def test_query_odataservice_chunking_needed(
+    def test_query_chunking_needed(
         self, mock_compose_url, mock_fetch_data
     ):
-        """Test query_odataservice when URL is too long and chunking is needed."""
+        """Test query() when URL is too long and chunking is needed."""
         # Create a long filter that would exceed URL length limit
         long_filter = (
             "(" + " or ".join([f"inv_mast_uid eq {i}" for i in range(100)]) + ")"
@@ -311,7 +311,7 @@ class TestODataClient:
 
         client = ODataClient("user", "pass", "http://example.com")
 
-        data, url = client.query_odataservice(
+        data, url = client.query(
             "test_endpoint",
             selects=["inv_mast_uid", "item_id"],
             filters=[long_filter],

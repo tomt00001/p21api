@@ -253,8 +253,8 @@ class TestIntegration:
 
         # Run all reports
         with patch("petl.tocsv"), patch("petl.fromdicts"):
-            # Mock the query_odataservice to return empty data to skip complex logic
-            with patch.object(client, "query_odataservice") as mock_query:
+            # Mock the query method to return empty data to skip complex logic
+            with patch.object(client, "query") as mock_query:
                 mock_query.return_value = (
                     [],
                     "test_url",

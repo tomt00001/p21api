@@ -104,7 +104,7 @@ class TestReportGrindShopOpenOrders:
                 return customer_data, "url"
             return [], "url"
 
-        mock_odata_client.query_odataservice.side_effect = mock_query_side_effect
+        mock_odata_client.query.side_effect = mock_query_side_effect
 
         # Mock petl operations
         mock_table = Mock()
@@ -127,10 +127,10 @@ class TestReportGrindShopOpenOrders:
         report.run()
 
         # Verify the client was called with correct parameters
-        assert mock_odata_client.query_odataservice.call_count >= 4
+        assert mock_odata_client.query.call_count >= 4
 
         # Check that the order header query had correct filters
-        order_hdr_call = mock_odata_client.query_odataservice.call_args_list[0]
+        order_hdr_call = mock_odata_client.query.call_args_list[0]
         assert order_hdr_call[1]["endpoint"] == "p21_view_oe_hdr"
         assert "company_id eq 'CMS'" in order_hdr_call[1]["filters"]
         assert "taker eq 'RC'" in order_hdr_call[1]["filters"]
@@ -142,7 +142,7 @@ class TestReportGrindShopOpenOrders:
         from p21api.report_grind_shop_open_orders import ReportGrindShopOpenOrders
 
         # Configure mock client to return no data
-        mock_odata_client.query_odataservice.return_value = ([], "url")
+        mock_odata_client.query.return_value = ([], "url")
 
         # Create and run report
         report = ReportGrindShopOpenOrders(
@@ -157,5 +157,5 @@ class TestReportGrindShopOpenOrders:
         # Should return early without error
         report.run()
 
-        # Should have called query_odataservice at least once
-        assert mock_odata_client.query_odataservice.call_count >= 1
+        # Should have called query at least once
+        assert mock_odata_client.query.call_count >= 1

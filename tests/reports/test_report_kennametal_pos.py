@@ -63,7 +63,7 @@ class TestReportKennametalPos:
             {"po_no": "PO001", "line_no": 1, "item_id": "ITEM001", "unit_cost": 45.00}
         ]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (sales_data, "url1"),
             (po_data, "url2"),
         ]
@@ -85,8 +85,8 @@ class TestReportKennametalPos:
 
         report._run()
 
-        # Should make 2 calls to query_odataservice
-        assert mock_odata_client.query_odataservice.call_count == 2
+        # Should make 2 calls to query
+        assert mock_odata_client.query.call_count == 2
         mock_fromdicts.assert_called()
         mock_tocsv.assert_called()
 
@@ -106,7 +106,7 @@ class TestReportKennametalPos:
             2024, 1, 31
         )
 
-        mock_odata_client.query_odataservice.return_value = ([], "test_url")
+        mock_odata_client.query.return_value = ([], "test_url")
 
         report = ReportKennametalPos(
             client=mock_odata_client,
@@ -120,7 +120,7 @@ class TestReportKennametalPos:
         report._run()
 
         # Should only make 1 call and return early
-        assert mock_odata_client.query_odataservice.call_count == 1
+        assert mock_odata_client.query.call_count == 1
         mock_fromdicts.assert_not_called()
         mock_tocsv.assert_not_called()
 
@@ -143,7 +143,7 @@ class TestReportKennametalPos:
         sales_data = [{"invoice_no": "INV001", "supplier_id": 11777}]
         po_data = [{"po_no": "PO001", "item_id": "ITEM001"}]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (sales_data, "url1"),
             (po_data, "url2"),
         ]

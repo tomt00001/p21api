@@ -27,7 +27,7 @@ class TestChunkingIntegration:
             ]
 
             # This should trigger chunking due to URL length
-            data, url = client.query_odataservice(
+            data, url = client.query(
                 endpoint="p21_view_inv_mast",
                 selects=["inv_mast_uid", "item_id", "item_desc"],
                 filters=[long_filter],
@@ -51,7 +51,7 @@ class TestChunkingIntegration:
             short_filter = "(inv_mast_uid eq 1 or inv_mast_uid eq 2)"
             mock_fetch_data.return_value = [{"inv_mast_uid": 1, "item_id": "ITEM_1"}]
 
-            data, url = client.query_odataservice(
+            data, url = client.query(
                 endpoint="p21_view_inv_mast",
                 selects=["inv_mast_uid", "item_id"],
                 filters=[short_filter],

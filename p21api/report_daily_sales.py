@@ -10,7 +10,7 @@ class ReportDailySales(ReportBase):
 
     def _run(self) -> None:
         # Use improved pagination-aware query method
-        invoice_data, _ = self._client.query_odataservice(
+        invoice_data, _ = self._client.query(
             endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",

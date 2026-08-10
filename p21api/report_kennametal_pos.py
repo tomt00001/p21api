@@ -21,7 +21,7 @@ class ReportKennametalPos(ReportBase):
             )
         )
         # Use improved pagination-aware query method
-        sales_data, _ = self._client.query_odataservice(
+        sales_data, _ = self._client.query(
             endpoint="p21_sales_history_view",
             selects=[
                 "bill2_country",
@@ -53,7 +53,7 @@ class ReportKennametalPos(ReportBase):
             etl.tocsv(sales, self.file_name("sales"))
 
         # Use improved post method with explicit parameters
-        customer_data = self._client.post_odataservice(
+        customer_data = self._client.query_post(
             endpoint="p21_view_customer",
             selects=[
                 "customer_id",
@@ -70,7 +70,7 @@ class ReportKennametalPos(ReportBase):
         if self._debug:
             etl.tocsv(customer, self.file_name("customer"))
 
-        supplier_data, _ = self._client.query_odataservice(
+        supplier_data, _ = self._client.query(
             endpoint="p21_view_inventory_supplier",
             selects=[
                 "cost",

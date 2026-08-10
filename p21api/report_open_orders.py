@@ -9,7 +9,7 @@ class ReportOpenOrders(ReportBase):
         return "open_orders_"
 
     def _run(self) -> None:
-        order_data, _ = self._client.query_odataservice(
+        order_data, _ = self._client.query(
             "p21_order_view",
             selects=[
                 "completed",
@@ -52,7 +52,7 @@ class ReportOpenOrders(ReportBase):
             {row["order_no"] for row in order_data},
         )
 
-        order_ack_line_data, _ = self._client.query_odataservice(
+        order_ack_line_data, _ = self._client.query(
             "p21_view_ord_ack_line",
             selects=[
                 "item_desc",

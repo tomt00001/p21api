@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from functools import cached_property
 from types import TracebackType
-from typing import Any, Generator
+from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -84,10 +84,7 @@ class ODataClient:
             "Accept": "application/json",
         }
 
-        # Use requests directly for backward compatibility with existing tests
-        import requests as direct_requests
-
-        response = direct_requests.post(
+        response = requests.post(
             url,
             headers={
                 **headers,
@@ -106,92 +103,9 @@ class ODataClient:
             self.logger.error(error_msg)
             raise AuthenticationError(error_msg)
 
-    def fetch_data_paginated(
-        self, url: str, page_size: int | None = None, method: str = "GET"
-    ) -> list[dict[str, Any]]:
-        """Fetch all data from the given endpoint using pagination."""
-        page_size = page_size or self.default_page_size
-
-        # Ensure the URL has proper pagination parameters
-        separator = "&" if "?" in url else "?"
-        if "$count=true" not in url:
-            url = f"{url}{separator}$count=true"
-            separator = "&"
-        if "$top=" not in url:
-            url = f"{url}{separator}$top={page_size}"
-
-        all_data: list[dict[str, Any]] = []
-        skip = 0
-        total_count = None
-
-        self.logger.info(f"Starting paginated data fetch from: {url}")
-
-        while True:
-            paginated_url = f"{url}&$skip={skip}" if skip > 0 else url
-
-            try:
-                if method.upper() == "POST":
-                    response = self._session.post(
-                        paginated_url,
-                        headers=self.headers,
-                        json={},
-                        timeout=self.DATA_TIMEOUT,
-                    )
-                else:
-                    response = self._session.get(
-                        paginated_url,
-                        headers=self.headers,
-                        timeout=self.DATA_TIMEOUT,
-                    )
-
-                # Check status without raise_for_status for better compatibility
-                if response.status_code != 200:
-                    raise Exception(
-                        f"Failed to fetch data: {response.text}\nUrl:{paginated_url}"
-                    )
-
-                data = response.json()
-
-                # Get the data array
-                value = data.get("value", [])
-                if not value:
-                    break
-
-                all_data.extend(value)
-
-                # Get total count from first response
-                if total_count is None:
-                    total_count = data.get("@odata.count", len(value))
-
-                skip += len(value)
-
-                self.logger.debug(
-                    f"Fetched {len(value)} records, total so far: {len(all_data)}"
-                )
-
-                # Break if we have all data or if this page was smaller than expected
-                if len(all_data) >= total_count or len(value) < page_size:
-                    break
-
-            except requests.RequestException as e:
-                self.logger.error(f"Failed to fetch data from {paginated_url}: {e}")
-                raise DataFetchError(f"Failed to fetch data: {e}") from e
-            except Exception:
-                # For non-request exceptions, just re-raise
-                raise
-
-        self.logger.info(f"Completed paginated fetch: {len(all_data)} total records")
-        return all_data
-
-    # Legacy method for backward compatibility - maintains original behavior
     def fetch_data(self, url: str) -> list[dict[str, Any]] | None:
-        """Fetch data from the given endpoint (legacy method)."""
-        # Use requests directly for backward compatibility with existing tests
-        import requests as direct_requests
-
-        response = direct_requests.get(
-            url, headers=self.headers, timeout=self.DATA_TIMEOUT
-        )
+        """Fetch data from the given (already-composed) OData URL."""
+        response = requests.get(url, headers=self.headers, timeout=self.DATA_TIMEOUT)
 
         if response.status_code != 200:
             raise DataFetchError(f"Failed to fetch data: {response.text}\nUrl:{url}")
@@ -287,7 +201,7 @@ class ODataClient:
             input_datetime.replace(day=last_day_of_month), datetime.max.time()
         )
 
-    def query_odataservice(
+    def query(
         self,
         endpoint: str,
         start_date: datetime | None = None,
@@ -297,7 +211,7 @@ class ODataClient:
         page_size: int | None = None,
         **kwargs: Any,
     ) -> tuple[list[dict[str, Any]] | None, str]:
-        """Query OData service with pagination support and automatic URL chunking."""
+        """GET-query OData service with pagination support and automatic chunking."""
         # Handle backward compatibility - selects used to be passed via kwargs
         if selects is None:
             selects = kwargs.get("selects", [])
@@ -335,7 +249,7 @@ class ODataClient:
         data = self.fetch_data(url)
         return data, url
 
-    def post_odataservice(
+    def query_post(
         self,
         endpoint: str,
         selects: list[str],
@@ -345,13 +259,10 @@ class ODataClient:
         order_by: list[str] | None = None,
         orderby: list[str] | None = None,  # Legacy parameter name
     ) -> list[dict[str, Any]] | None:
-        """Post to OData service with pagination support (legacy compatible)."""
+        """POST-query OData service with pagination support."""
         # Handle legacy 'orderby' parameter
         if orderby is not None:
             order_by = orderby
-
-        # Use original logic for backward compatibility
-        import requests as direct_requests
 
         body: dict[str, Any] = {}
 
@@ -369,7 +280,7 @@ class ODataClient:
         data: list[dict[str, Any]] = []
 
         while True:
-            response = direct_requests.post(
+            response = requests.post(
                 f"{url}&$skip={count}",
                 headers=self.headers,
                 json=body,
@@ -390,66 +301,6 @@ class ODataClient:
                 break
 
         return data
-
-    def query_with_generator(
-        self,
-        endpoint: str,
-        selects: list[str],
-        start_date: datetime | None = None,
-        filters: list[str] | None = None,
-        order_by: list[str] | None = None,
-        page_size: int | None = None,
-    ) -> Generator[dict[str, Any], None, None]:
-        """Query OData service and yield records one by one for memory efficiency."""
-        page_size = page_size or self.default_page_size
-
-        url = self.compose_url(
-            endpoint=endpoint,
-            selects=selects,
-            start_date=start_date,
-            filters=filters,
-            order_by=order_by,
-        )
-
-        # Ensure the URL has proper pagination parameters
-        separator = "&" if "?" in url else "?"
-        if "$count=true" not in url:
-            url = f"{url}{separator}$count=true"
-            separator = "&"
-        if "$top=" not in url:
-            url = f"{url}{separator}$top={page_size}"
-
-        skip = 0
-
-        while True:
-            paginated_url = f"{url}&$skip={skip}" if skip > 0 else url
-
-            try:
-                response = self._session.get(
-                    paginated_url,
-                    headers=self.headers,
-                    timeout=self.DATA_TIMEOUT,
-                )
-
-                response.raise_for_status()
-                data = response.json()
-
-                value = data.get("value", [])
-                if not value:
-                    break
-
-                for record in value:
-                    yield record
-
-                skip += len(value)
-
-                # Break if this page was smaller than expected
-                if len(value) < page_size:
-                    break
-
-            except requests.RequestException as e:
-                self.logger.error(f"Failed to fetch data from {paginated_url}: {e}")
-                raise DataFetchError(f"Failed to fetch data: {e}") from e
 
     def _try_chunked_request(
         self,
@@ -519,10 +370,9 @@ class ODataClient:
         """
         metadata_url = f"{self.base_url}/odataservice/odata/$metadata"
         self.logger.info(f"Fetching OData $metadata from: {metadata_url}")
-        import requests as direct_requests
 
         try:
-            response = direct_requests.get(
+            response = requests.get(
                 metadata_url,
                 headers=self.headers,
                 timeout=self.DATA_TIMEOUT,
@@ -532,7 +382,7 @@ class ODataClient:
                     f"Failed to fetch $metadata: {response.text}\nUrl:{metadata_url}"
                 )
             self.logger.info("Successfully fetched OData $metadata.")
-            return response.text
+            return str(response.text)
         except requests.RequestException as e:
             self.logger.error(f"Failed to fetch $metadata from {metadata_url}: {e}")
             raise DataFetchError(f"Failed to fetch $metadata: {e}") from e

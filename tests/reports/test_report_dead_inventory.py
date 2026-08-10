@@ -38,7 +38,7 @@ class TestReportDeadInventory:
         sales_history_row = {"item_id": "A", "invoice_date": "2023-12-31"}
         # 3. supplier lookup returns supplier name
         supplier_row = {"supplier_id": 123, "supplier_name": "Test Supplier"}
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             ([inv_loc_row], "url1"),
             ([sales_history_row], "url2"),
             ([{"item_id": "A", "date_created": "2023-01-15"}], "url3"),

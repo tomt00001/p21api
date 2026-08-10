@@ -10,7 +10,7 @@ class ReportJarp(ReportBase):
 
     def _run(self) -> None:
         # Use improved pagination-aware query method with explicit parameters
-        invoice_data, _ = self._client.query_odataservice(
+        invoice_data, _ = self._client.query(
             endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",
@@ -48,7 +48,7 @@ class ReportJarp(ReportBase):
             "invoice_no",
             {row["invoice_no"] for row in invoice_data},
         )
-        invoice_line_data, _ = self._client.query_odataservice(
+        invoice_line_data, _ = self._client.query(
             endpoint="p21_view_invoice_line",
             selects=[
                 "item_id",
@@ -70,7 +70,7 @@ class ReportJarp(ReportBase):
         if self._debug:
             etl.tocsv(invoice_line, self.file_name("invoice_line"))
 
-        sales_history_data, _ = self._client.query_odataservice(
+        sales_history_data, _ = self._client.query(
             endpoint="p21_sales_history_view",
             selects=[
                 "item_id",
@@ -97,7 +97,7 @@ class ReportJarp(ReportBase):
             {row["supplier_id"] for row in sales_history_data},
             quote_strings=False,
         )
-        supplier_data, _ = self._client.query_odataservice(
+        supplier_data, _ = self._client.query(
             endpoint="p21_view_inventory_supplier",
             selects=["inv_mast_uid", "supplier_id", "item_id"],
             filters=[f"({supplier_id_filter})"],

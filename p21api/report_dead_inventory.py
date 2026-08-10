@@ -21,7 +21,7 @@ class ReportDeadInventory(ReportBase):
         # Fetch qty_on_hand, standard_cost, and primary_supplier_id from
         # p21_view_inv_loc, aggregate by item
         try:
-            inv_loc_data, _ = self._client.query_odataservice(
+            inv_loc_data, _ = self._client.query(
                 endpoint="p21_view_inv_loc",
                 selects=[
                     "item_id",
@@ -59,7 +59,7 @@ class ReportDeadInventory(ReportBase):
                         supplier_id_map[item_id] = supplier_id
 
         # Fetch all sales history lines (all time) to determine last sales date
-        sales_lines_raw, _ = self._client.query_odataservice(
+        sales_lines_raw, _ = self._client.query(
             endpoint="p21_sales_history_view",
             selects=["item_id", "invoice_date"],
             page_size=1000,
@@ -78,7 +78,7 @@ class ReportDeadInventory(ReportBase):
         }
 
         # Fetch all inventory receipts to determine last received date
-        receipts_raw, _ = self._client.query_odataservice(
+        receipts_raw, _ = self._client.query(
             endpoint="p21_view_inventory_receipts_line",
             selects=["item_id", "date_created"],
             page_size=1000,
@@ -103,7 +103,7 @@ class ReportDeadInventory(ReportBase):
             supplier_filter = ReportBase.build_or_filter(
                 "supplier_id", unique_supplier_ids, quote_strings=False
             )
-            supplier_rows, _ = self._client.query_odataservice(
+            supplier_rows, _ = self._client.query(
                 endpoint="p21_view_supplier",
                 selects=["supplier_id", "supplier_name"],
                 filters=[f"({supplier_filter})"] if supplier_filter else [],

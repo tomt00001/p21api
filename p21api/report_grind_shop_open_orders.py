@@ -10,7 +10,7 @@ class ReportGrindShopOpenOrders(ReportBase):
 
     def _run(self) -> None:
         # Get order header data for grind shop orders (taker = 'RC')
-        order_hdr_data, _ = self._client.query_odataservice(
+        order_hdr_data, _ = self._client.query(
             endpoint="p21_view_oe_hdr",
             selects=[
                 "customer_id",
@@ -44,7 +44,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             {row["order_no"] for row in order_hdr_data},
         )
 
-        order_line_data, _ = self._client.query_odataservice(
+        order_line_data, _ = self._client.query(
             endpoint="p21_view_oe_line",
             selects=[
                 "order_no",
@@ -81,7 +81,7 @@ class ReportGrindShopOpenOrders(ReportBase):
         if not inv_mast_uid_filters:
             return
 
-        inv_mast_data, _ = self._client.query_odataservice(
+        inv_mast_data, _ = self._client.query(
             endpoint="p21_view_inv_mast",
             selects=[
                 "inv_mast_uid",
@@ -104,7 +104,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             quote_strings=False,
         )
 
-        customer_data, _ = self._client.query_odataservice(
+        customer_data, _ = self._client.query(
             endpoint="p21_view_customer",
             selects=[
                 "customer_id",
