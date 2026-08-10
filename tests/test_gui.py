@@ -60,10 +60,7 @@ def test_show_gui_dialog_rejected_returns_none(mock_dialog_class, mock_qapp):
     mock_dialog.get_data.assert_not_called()
 
 
-@pytest.mark.skip(
-    reason="Real DatePickerDialog construction crashes in headless test runs "
-    "since it subclasses QDialog directly; not safely testable without a display."
-)
+@pytest.mark.skip(reason="Not safely testable headless - see module docstring.")
 def test_date_picker_dialog_construction():
-    """Placeholder documenting the known gap: real widget construction/layout
-    (populate_reports, get_data, browse_folder) is not covered headlessly."""
+    """Known gap: real widget construction/layout (populate_reports, get_data,
+    browse_folder) is not covered headlessly."""
