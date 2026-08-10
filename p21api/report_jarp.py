@@ -41,8 +41,7 @@ class ReportJarp(ReportBase):
             invoice_pre,
             lambda rec: not (rec.get("po_no") or "").startswith("P"),
         )
-        if self._debug:
-            etl.tocsv(invoice, self.file_name("invoice"))
+        self._debug_dump(invoice, "invoice")
 
         invoice_ids_filter = ReportBase.build_or_filter(
             "invoice_no",
@@ -67,8 +66,7 @@ class ReportJarp(ReportBase):
         if not invoice_line_data:
             return
         invoice_line = etl.fromdicts(invoice_line_data)
-        if self._debug:
-            etl.tocsv(invoice_line, self.file_name("invoice_line"))
+        self._debug_dump(invoice_line, "invoice_line")
 
         sales_history_data, _ = self._client.query(
             endpoint="p21_sales_history_view",
@@ -89,8 +87,7 @@ class ReportJarp(ReportBase):
         if not sales_history_data:
             return
         sales_history = etl.fromdicts(sales_history_data)
-        if self._debug:
-            etl.tocsv(sales_history, self.file_name("sales_history"))
+        self._debug_dump(sales_history, "sales_history")
 
         supplier_id_filter = ReportBase.build_or_filter(
             "supplier_id",
@@ -104,8 +101,7 @@ class ReportJarp(ReportBase):
             page_size=500,  # Smaller page size for supplier data
         )
         supplier = etl.fromdicts(supplier_data)
-        if self._debug:
-            etl.tocsv(supplier, self.file_name("supplier"))
+        self._debug_dump(supplier, "supplier")
 
         # Step 1: Join sales_history with supplier on inv_mast_uid,
         # supplier_id, and item_id

@@ -164,3 +164,23 @@ class TestReportKennametalPos:
 
         # Should write debug CSV files
         assert mock_tocsv.call_count >= 2
+
+        # Regression test: a prior copy-paste bug caused the
+        # sales_customer_joined and final_joined debug dumps to write
+        # `supplier` (== mock_table here) instead of the just-computed join
+        # result. Verify each dump writes its own distinct table.
+        def dump_table_for(name_part: str) -> Mock:
+            matches = [
+                call.args[0]
+                for call in mock_tocsv.call_args_list
+                if name_part in call.args[1]
+            ]
+            assert len(matches) == 1, f"expected exactly one dump for {name_part}"
+            return matches[0]
+
+        sales_customer_joined_dump = dump_table_for("sales_customer_joined")
+        final_joined_dump = dump_table_for("final_joined")
+
+        assert sales_customer_joined_dump is not mock_table
+        assert final_joined_dump is not mock_table
+        assert sales_customer_joined_dump is not final_joined_dump

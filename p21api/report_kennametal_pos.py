@@ -49,8 +49,7 @@ class ReportKennametalPos(ReportBase):
         if not sales_data:
             return
         sales = etl.fromdicts(sales_data)
-        if self._debug:
-            etl.tocsv(sales, self.file_name("sales"))
+        self._debug_dump(sales, "sales")
 
         # Use improved post method with explicit parameters
         customer_data = self._client.query_post(
@@ -67,8 +66,7 @@ class ReportKennametalPos(ReportBase):
             page_size=1000,  # Explicit page size for customer data
         )
         customer = etl.fromdicts(customer_data)
-        if self._debug:
-            etl.tocsv(customer, self.file_name("customer"))
+        self._debug_dump(customer, "customer")
 
         supplier_data, _ = self._client.query(
             endpoint="p21_view_inventory_supplier",
@@ -84,8 +82,7 @@ class ReportKennametalPos(ReportBase):
         if not supplier_data:
             return
         supplier = etl.fromdicts(supplier_data)
-        if self._debug:
-            etl.tocsv(supplier, self.file_name("supplier"))
+        self._debug_dump(supplier, "supplier")
 
         sales_customer_joined = etl.join(
             sales,
@@ -93,8 +90,7 @@ class ReportKennametalPos(ReportBase):
             lkey="customer_id",
             rkey="customer_id_string",
         )
-        if self._debug:
-            etl.tocsv(supplier, self.file_name("sales_customer_joined"))
+        self._debug_dump(sales_customer_joined, "sales_customer_joined")
 
         final_join = etl.join(
             sales_customer_joined,
@@ -102,8 +98,7 @@ class ReportKennametalPos(ReportBase):
             lkey=("inv_mast_uid", "supplier_id"),
             rkey=("inv_mast_uid", "supplier_id"),
         )
-        if self._debug:
-            etl.tocsv(supplier, self.file_name("final_joined"))
+        self._debug_dump(final_join, "final_joined")
 
         # Add a new 'week_in_month' column to the table
         with_week_column = etl.addfield(

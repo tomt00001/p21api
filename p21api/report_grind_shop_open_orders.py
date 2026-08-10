@@ -35,8 +35,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         order_hdr = etl.fromdicts(order_hdr_data)
-        if self._debug:
-            etl.tocsv(order_hdr, self.file_name("order_hdr"))
+        self._debug_dump(order_hdr, "order_hdr")
 
         # Get order line data for the orders
         order_no_filters = ReportBase.build_or_filter(
@@ -68,8 +67,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         order_line = etl.fromdicts(order_line_data)
-        if self._debug:
-            etl.tocsv(order_line, self.file_name("order_line"))
+        self._debug_dump(order_line, "order_line")
 
         # Get inventory master data for item details
         inv_mast_uid_filters = ReportBase.build_or_filter(
@@ -94,8 +92,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         inv_mast = etl.fromdicts(inv_mast_data)
-        if self._debug:
-            etl.tocsv(inv_mast, self.file_name("inv_mast"))
+        self._debug_dump(inv_mast, "inv_mast")
 
         # Get customer data
         customer_id_filters = ReportBase.build_or_filter(
@@ -116,8 +113,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         customer = etl.fromdicts(customer_data)
-        if self._debug:
-            etl.tocsv(customer, self.file_name("customer"))
+        self._debug_dump(customer, "customer")
 
         # Join order header with customer
         order_customer_joined = etl.join(

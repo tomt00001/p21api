@@ -1,7 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import petl as etl
 
 from .odata_client import ODataClient
 
@@ -52,6 +54,11 @@ class ReportBase(ABC):
 
     def run(self) -> None:
         self._run()
+
+    def _debug_dump(self, table: Any, name_part: str) -> None:
+        """Write `table` to a CSV named `name_part` when debug mode is enabled."""
+        if self._debug:
+            etl.tocsv(table, self.file_name(name_part))
 
     def file_name(self, name_part: str) -> str:
         return (
