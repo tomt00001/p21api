@@ -67,9 +67,7 @@ A robust Python application for extracting and processing data from P21 ERP syst
 
 - **Multiple Report Types**: Support for inventory, sales, invoices, and consolidation reports
 - **Flexible Configuration**: Environment-based settings with GUI fallback
-- **Async Processing**: Concurrent report execution for improved performance
-- **Comprehensive Logging**: Structured logging with multiple output formats
-- **Error Handling**: Robust error management with detailed reporting
+- **Error Handling**: Robust error management with a crash log file for post-mortem debugging
 - **GUI Interface**: PyQt6-based graphical interface for easy configuration
 - **CLI Support**: Full command-line interface for automation
 - **Type Safety**: Full type hints with mypy compatibility
@@ -139,25 +137,25 @@ $env:SHOW_GUI='true'; uv run python main.py
 ```python
 from p21api.config import Config
 from p21api.odata_client import ODataClient
-from p21api.async_runner import AsyncReportRunner
 
 # Initialize configuration
 config = Config()
 
-# Create OData client
-client = ODataClient(
+# Create OData client and run each configured report sequentially
+with ODataClient(
     username=config.username,
     password=config.password,
-    base_url=config.base_url
-)
-
-# Run reports asynchronously
-runner = AsyncReportRunner(max_workers=5)
-results = await runner.run_reports_async(
-    report_classes=config.get_reports(),
-    config=config,
-    client=client
-)
+    base_url=config.base_url,
+) as client:
+    for report_class in config.get_reports():
+        report_class(
+            client=client,
+            start_date=config.start_date,
+            end_date=config.end_date,
+            output_folder=config.output_folder,
+            debug=config.debug,
+            config=config,
+        ).run()
 ```
 
 ### GUI Interface
@@ -217,20 +215,18 @@ uv run ruff check . --fix
 
 ```
 p21api/
-├── p21api/                 # Main package
-│   ├── config.py          # Configuration management
-│   ├── odata_client.py    # OData API client
-│   ├── report_base.py     # Base report class
-│   ├── report_*.py        # Specific report implementations
-│   ├── async_runner.py    # Async report execution
-│   ├── container.py       # Dependency injection
-│   ├── environment_config.py # Environment settings
-│   └── logging_config.py  # Logging configuration
-├── gui/                   # GUI components
-├── tests/                 # Test suite
-├── output/                # Generated reports
-├── main.py               # Application entry point
-└── pyproject.toml        # Project configuration
+├── p21api/                    # Main package
+│   ├── config.py             # Configuration management
+│   ├── odata_client.py       # OData API client
+│   ├── report_base.py        # Base report class (shared debug-dump/file-naming helpers)
+│   ├── report_invoice_base.py # Shared base for the invoice-header reports
+│   └── report_*.py           # Specific report implementations
+├── gui/                      # Optional PyQt6 GUI
+├── scripts/                  # Dev tooling (OData $metadata fetch/parse, schema helper)
+├── tests/                    # Test suite
+├── output/                   # Generated reports
+├── main.py                   # Application entry point
+└── pyproject.toml            # Project configuration
 ```
 
 ### Running Tests
@@ -254,10 +250,8 @@ p21api/
 
 ## 📈 Performance
 
-- **Concurrent Execution**: Run multiple reports simultaneously
-- **Configurable Workers**: Adjust concurrency based on system capabilities
-- **Memory Efficient**: Streaming data processing for large datasets
-- **Connection Pooling**: Efficient API connection management
+- **Automatic Pagination & Chunking**: Large result sets and long OR-filters are paginated/chunked transparently
+- **Connection Pooling**: Efficient API connection management via a shared `requests` session with retries
 
 ## 🛡️ Security
 
@@ -268,12 +262,8 @@ p21api/
 
 ## 📝 Logging
 
-The application provides comprehensive logging with multiple levels and outputs:
-
-- **Console Logging**: Colored output for development
-- **File Logging**: Rotating file logs for production
-- **Structured Logging**: JSON format for log aggregation
-- **Performance Metrics**: Execution time and resource usage tracking
+- **Console Logging**: Standard Python logging output during a run
+- **Crash Log File**: On an unhandled error, a `p21api_error_<timestamp>.log` file is written capturing console output for post-mortem debugging
 
 ## 🤝 Contributing
 
