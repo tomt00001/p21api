@@ -1,37 +1,7 @@
-import petl as etl
-
-from .report_base import ReportBase
+from .report_invoice_base import InvoiceHeaderReportBase
 
 
-class ReportMonthlyInvoices(ReportBase):
+class ReportMonthlyInvoices(InvoiceHeaderReportBase):
     @property
     def file_name_prefix(self) -> str:
         return "monthly_invoices_"
-
-    def _run(self) -> None:
-        invoice_data, _ = self._client.query(
-            "p21_view_invoice_hdr",
-            start_date=self._start_date,
-            selects=[
-                "bill2_name",
-                "freight",
-                "invoice_date",
-                "invoice_no",
-                "other_charge_amount",
-                "period",
-                "tax_amount",
-                "total_amount",
-                "year_for_period",
-                "salesrep_id",
-            ],
-            order_by=["year_for_period asc", "invoice_no asc"],
-            # use_pagination removed; rely on page_size
-            page_size=1000,
-        )
-        if not invoice_data:
-            return
-        invoice = etl.fromdicts(invoice_data)
-        etl.tocsv(
-            invoice,
-            self.file_name("report"),
-        )
