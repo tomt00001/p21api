@@ -4,7 +4,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, Type
 
-from pydantic import Field, computed_field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 from .report_base import ReportBase
@@ -16,6 +16,12 @@ from .report_kennametal_pos import ReportKennametalPos
 from .report_monthly_consolidation import ReportMonthlyConsolidation
 from .report_monthly_invoices import ReportMonthlyInvoices
 from .report_open_orders import ReportOpenOrders
+
+
+def _end_of_month(value: datetime) -> datetime:
+    """Return the last instant of the day on the last day of value's month."""
+    last_day_of_month = calendar.monthrange(value.year, value.month)[1]
+    return datetime.combine(value.replace(day=last_day_of_month), datetime.max.time())
 
 
 class Config(BaseSettings):
@@ -83,40 +89,14 @@ class Config(BaseSettings):
     def set_end_date_if_not_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         start_date = cls.parse_start_date(values.get("start_date"))
         if not values.get("end_date_") and start_date:
-            # Set to last day of the start_date's month
-            last_day_of_month = calendar.monthrange(start_date.year, start_date.month)[
-                1
-            ]
-            values["end_date_"] = datetime.combine(
-                start_date.replace(day=last_day_of_month), datetime.max.time()
-            )
+            values["end_date_"] = _end_of_month(start_date)
         return values
-
-    @computed_field
-    def end_date_computed(self) -> datetime:
-        if not self.end_date_ and self.start_date:
-            # Get the last day of the month
-            last_day_of_month = calendar.monthrange(
-                self.start_date.year, self.start_date.month
-            )[1]
-            return datetime.combine(
-                self.start_date.replace(day=last_day_of_month), datetime.max.time()
-            )
-        if not self.end_date_:
-            raise ValueError("End date is required")
-        return self.end_date_
 
     @property
     def end_date(self) -> datetime:
-        """Provide backward compatibility access to end_date."""
+        """Last day of start_date's month, unless end_date_ was set explicitly."""
         if not self.end_date_ and self.start_date:
-            # Get the last day of the month
-            last_day_of_month = calendar.monthrange(
-                self.start_date.year, self.start_date.month
-            )[1]
-            return datetime.combine(
-                self.start_date.replace(day=last_day_of_month), datetime.max.time()
-            )
+            return _end_of_month(self.start_date)
         if not self.end_date_:
             raise ValueError("End date is required")
         return self.end_date_
