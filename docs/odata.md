@@ -71,8 +71,8 @@ GET /odataservice/odata/table/users?$count=true
 - The OData $metadata endpoint is available at:
   - `{base_url}/odataservice/odata/$metadata`
 - To enumerate all available entity sets, properties, and navigation properties, run:
-  - `uv run python fetch_odata_metadata.py` (fetches and saves the XML)
-  - `uv run python parse_odata_metadata.py` (generates Markdown summary)
+  - `uv run python scripts/fetch_odata_metadata.py` (fetches and saves the XML)
+  - `uv run python scripts/parse_odata_metadata.py` (generates Markdown summary)
 - The summary is written to `odata_schema/odata_schema_summary.md`.
 
 ## Administration

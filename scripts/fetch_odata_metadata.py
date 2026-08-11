@@ -1,7 +1,7 @@
 """
 Fetch and save the OData $metadata XML schema for the configured service.
 Usage:
-    uv run python fetch_odata_metadata.py
+    uv run python scripts/fetch_odata_metadata.py
 
 This script authenticates using the configured environment (env/env.prod),
 fetches the OData $metadata, and saves it to odata_schema/odata_metadata.xml.
@@ -20,7 +20,7 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
     config = Config()
-    output_dir = Path(__file__).parent / "odata_schema"
+    output_dir = Path(__file__).parent.parent / "odata_schema"
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir / "odata_metadata.xml"
     with ODataClient(

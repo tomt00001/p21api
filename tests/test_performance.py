@@ -117,7 +117,7 @@ class TestPerformance:
         from p21api.report_daily_sales import ReportDailySales
 
         mock_client = Mock()
-        mock_client.query_odataservice.return_value = (large_dataset, "test_url")
+        mock_client.query.return_value = (large_dataset, "test_url")
 
         mock_config = Mock()
         mock_config.debug = False

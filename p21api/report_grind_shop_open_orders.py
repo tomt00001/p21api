@@ -10,7 +10,7 @@ class ReportGrindShopOpenOrders(ReportBase):
 
     def _run(self) -> None:
         # Get order header data for grind shop orders (taker = 'RC')
-        order_hdr_data, _ = self._client.query_odataservice(
+        order_hdr_data, _ = self._client.query(
             endpoint="p21_view_oe_hdr",
             selects=[
                 "customer_id",
@@ -35,8 +35,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         order_hdr = etl.fromdicts(order_hdr_data)
-        if self._debug:
-            etl.tocsv(order_hdr, self.file_name("order_hdr"))
+        self._debug_dump(order_hdr, "order_hdr")
 
         # Get order line data for the orders
         order_no_filters = ReportBase.build_or_filter(
@@ -44,7 +43,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             {row["order_no"] for row in order_hdr_data},
         )
 
-        order_line_data, _ = self._client.query_odataservice(
+        order_line_data, _ = self._client.query(
             endpoint="p21_view_oe_line",
             selects=[
                 "order_no",
@@ -68,8 +67,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         order_line = etl.fromdicts(order_line_data)
-        if self._debug:
-            etl.tocsv(order_line, self.file_name("order_line"))
+        self._debug_dump(order_line, "order_line")
 
         # Get inventory master data for item details
         inv_mast_uid_filters = ReportBase.build_or_filter(
@@ -81,7 +79,7 @@ class ReportGrindShopOpenOrders(ReportBase):
         if not inv_mast_uid_filters:
             return
 
-        inv_mast_data, _ = self._client.query_odataservice(
+        inv_mast_data, _ = self._client.query(
             endpoint="p21_view_inv_mast",
             selects=[
                 "inv_mast_uid",
@@ -94,8 +92,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         inv_mast = etl.fromdicts(inv_mast_data)
-        if self._debug:
-            etl.tocsv(inv_mast, self.file_name("inv_mast"))
+        self._debug_dump(inv_mast, "inv_mast")
 
         # Get customer data
         customer_id_filters = ReportBase.build_or_filter(
@@ -104,7 +101,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             quote_strings=False,
         )
 
-        customer_data, _ = self._client.query_odataservice(
+        customer_data, _ = self._client.query(
             endpoint="p21_view_customer",
             selects=[
                 "customer_id",
@@ -116,8 +113,7 @@ class ReportGrindShopOpenOrders(ReportBase):
             return
 
         customer = etl.fromdicts(customer_data)
-        if self._debug:
-            etl.tocsv(customer, self.file_name("customer"))
+        self._debug_dump(customer, "customer")
 
         # Join order header with customer
         order_customer_joined = etl.join(

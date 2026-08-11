@@ -99,7 +99,7 @@ class TestReportJarp:
             }
         ]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (invoice_data, "url1"),
             (invoice_line_data, "url2"),
             (sales_history_data, "url3"),
@@ -124,8 +124,8 @@ class TestReportJarp:
 
         report._run()
 
-        # Should make 4 calls to query_odataservice
-        assert mock_odata_client.query_odataservice.call_count == 4
+        # Should make 4 calls to query
+        assert mock_odata_client.query.call_count == 4
         mock_fromdicts.assert_called()
         mock_tocsv.assert_called()
 
@@ -137,7 +137,7 @@ class TestReportJarp:
         """Test JARP report execution with no invoice data."""
         from p21api.report_jarp import ReportJarp
 
-        mock_odata_client.query_odataservice.return_value = ([], "test_url")
+        mock_odata_client.query.return_value = ([], "test_url")
 
         report = ReportJarp(
             client=mock_odata_client,
@@ -151,7 +151,7 @@ class TestReportJarp:
         report._run()
 
         # Should only make 1 call and return early
-        assert mock_odata_client.query_odataservice.call_count == 1
+        assert mock_odata_client.query.call_count == 1
         mock_fromdicts.assert_not_called()
         mock_tocsv.assert_not_called()
 
@@ -166,7 +166,7 @@ class TestReportJarp:
 
         invoice_data = [{"invoice_no": "INV001", "po_no": "PO001"}]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (invoice_data, "url1"),
             ([], "url2"),  # No invoice line data
         ]
@@ -187,7 +187,7 @@ class TestReportJarp:
         report._run()
 
         # Should make 2 calls and return early
-        assert mock_odata_client.query_odataservice.call_count == 2
+        assert mock_odata_client.query.call_count == 2
 
     @patch("petl.tocsv")
     @patch("petl.fromdicts")
@@ -203,7 +203,7 @@ class TestReportJarp:
         sales_history_data = [{"invoice_no": "INV001", "supplier_id": 100}]
         supplier_data = [{"supplier_id": 100}]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (invoice_data, "url1"),
             (invoice_line_data, "url2"),
             (sales_history_data, "url3"),
@@ -244,7 +244,7 @@ class TestReportJarp:
             {"invoice_no": "INV002", "po_no": "P123"},  # Should be filtered out
         ]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (invoice_data, "url1"),
             ([], "url2"),  # No invoice line data to stop early
         ]

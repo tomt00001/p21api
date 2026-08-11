@@ -9,7 +9,7 @@ class ReportOpenOrders(ReportBase):
         return "open_orders_"
 
     def _run(self) -> None:
-        order_data, _ = self._client.query_odataservice(
+        order_data, _ = self._client.query(
             "p21_order_view",
             selects=[
                 "completed",
@@ -45,14 +45,13 @@ class ReportOpenOrders(ReportBase):
         if not order_data:
             return
         order = etl.fromdicts(order_data)
-        if self._debug:
-            etl.tocsv(order, self.file_name("order"))
+        self._debug_dump(order, "order")
         order_no_filters = ReportBase.build_or_filter(
             "order_no",
             {row["order_no"] for row in order_data},
         )
 
-        order_ack_line_data, _ = self._client.query_odataservice(
+        order_ack_line_data, _ = self._client.query(
             "p21_view_ord_ack_line",
             selects=[
                 "item_desc",
@@ -67,8 +66,7 @@ class ReportOpenOrders(ReportBase):
         if not order_ack_line_data:
             return
         order_ack_line = etl.fromdicts(order_ack_line_data)
-        if self._debug:
-            etl.tocsv(order_ack_line, self.file_name("order_ack_line"))
+        self._debug_dump(order_ack_line, "order_ack_line")
 
         joined = etl.join(
             order,
@@ -76,8 +74,7 @@ class ReportOpenOrders(ReportBase):
             lkey=("order_no", "item_id", "line_no"),
             rkey=("order_no", "item_id", "line_number"),
         )
-        if self._debug:
-            etl.tocsv(joined, self.file_name("joined"))
+        self._debug_dump(joined, "joined")
 
         selected = etl.cut(
             joined,

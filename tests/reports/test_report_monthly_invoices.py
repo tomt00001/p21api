@@ -41,7 +41,7 @@ class TestReportMonthlyInvoices:
             }
         ]
 
-        mock_odata_client.query_odataservice.return_value = (invoice_data, "test_url")
+        mock_odata_client.query.return_value = (invoice_data, "test_url")
         mock_table = Mock()
         mock_fromdicts.return_value = mock_table
 
@@ -56,7 +56,7 @@ class TestReportMonthlyInvoices:
 
         report._run()
 
-        mock_odata_client.query_odataservice.assert_called_once()
+        mock_odata_client.query.assert_called_once()
         mock_fromdicts.assert_called()
         mock_tocsv.assert_called()
 
@@ -68,7 +68,7 @@ class TestReportMonthlyInvoices:
         """Test monthly invoices report execution with no data."""
         from p21api.report_monthly_invoices import ReportMonthlyInvoices
 
-        mock_odata_client.query_odataservice.return_value = ([], "test_url")
+        mock_odata_client.query.return_value = ([], "test_url")
 
         report = ReportMonthlyInvoices(
             client=mock_odata_client,
@@ -81,6 +81,6 @@ class TestReportMonthlyInvoices:
 
         report._run()
 
-        mock_odata_client.query_odataservice.assert_called_once()
+        mock_odata_client.query.assert_called_once()
         mock_fromdicts.assert_not_called()
         mock_tocsv.assert_not_called()

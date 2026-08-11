@@ -1,9 +1,47 @@
-from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional
 
 import petl as etl
 
 from .report_base import ReportBase
+
+
+def _safe_float_sum(values: Any) -> float:
+    """Sum values that coerce to float, silently ignoring ones that don't."""
+    total = 0.0
+    for value in values:
+        if value is None:
+            continue
+        try:
+            total += float(value)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _first_non_null(values: Any) -> Any:
+    """Return the first non-null value encountered, or None."""
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
+def _first_non_null_float(values: Any) -> Optional[float]:
+    """Return the first value that coerces to float, or None."""
+    for value in values:
+        if value is None:
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _max_or_none(values: Any) -> Any:
+    """Return the max of the truthy values, or None if there are none."""
+    truthy_values = [value for value in values if value]
+    return max(truthy_values) if truthy_values else None
 
 
 class ReportDeadInventory(ReportBase):
@@ -18,149 +56,144 @@ class ReportDeadInventory(ReportBase):
         return "dead_inventory_"
 
     def _run(self) -> None:
-        # Fetch qty_on_hand, standard_cost, and primary_supplier_id from
-        # p21_view_inv_loc, aggregate by item
-        try:
-            inv_loc_data, _ = self._client.query_odataservice(
-                endpoint="p21_view_inv_loc",
-                selects=[
-                    "item_id",
-                    "qty_on_hand",
-                    "standard_cost",
-                    "primary_supplier_id",
-                ],
-                page_size=1000,
-            )
-        except StopIteration:
-            inv_loc_data = None
-        qty_on_hand_map: Dict[str, float] = defaultdict(float)
-        cost_map: Dict[str, float] = {}
-        supplier_id_map: Dict[str, Any] = {}
-        if inv_loc_data:
-            for row in inv_loc_data:
-                item_id = row.get("item_id")
-                qty = row.get("qty_on_hand")
-                cost = row.get("standard_cost")
-                supplier_id = row.get("primary_supplier_id")
-                if item_id:
-                    if qty is not None:
-                        try:
-                            qty_on_hand_map[item_id] += float(qty)
-                        except (TypeError, ValueError):
-                            pass
-                    # Use the first non-null cost encountered for the item
-                    if item_id not in cost_map and cost is not None:
-                        try:
-                            cost_map[item_id] = float(cost)
-                        except (TypeError, ValueError):
-                            pass
-                    # Use the first non-null supplier_id encountered for the item
-                    if item_id not in supplier_id_map and supplier_id is not None:
-                        supplier_id_map[item_id] = supplier_id
+        inv_loc_data, _ = self._client.query(
+            endpoint="p21_view_inv_loc",
+            selects=[
+                "item_id",
+                "qty_on_hand",
+                "standard_cost",
+                "primary_supplier_id",
+            ],
+            page_size=1000,
+        )
+        inventory = self._aggregate_inventory(inv_loc_data or [])
 
-        # Fetch all sales history lines (all time) to determine last sales date
-        sales_lines_raw, _ = self._client.query_odataservice(
+        sales_lines, _ = self._client.query(
             endpoint="p21_sales_history_view",
             selects=["item_id", "invoice_date"],
             page_size=1000,
         )
-        sales_lines: List[Dict[str, Any]] = sales_lines_raw if sales_lines_raw else []
+        last_sales_date = self._max_date_per_item(sales_lines or [], "invoice_date")
 
-        # Build last sales date per item from sales history
-        item_sales_dates: defaultdict[str, List[Any]] = defaultdict(list)
-        for row in sales_lines:
-            item_id = row.get("item_id")
-            sale_date = row.get("invoice_date")
-            if item_id and sale_date:
-                item_sales_dates[item_id].append(sale_date)
-        last_sales_date: Dict[str, Any] = {
-            item_id: max(dates) for item_id, dates in item_sales_dates.items() if dates
-        }
-
-        # Fetch all inventory receipts to determine last received date
-        receipts_raw, _ = self._client.query_odataservice(
+        receipts, _ = self._client.query(
             endpoint="p21_view_inventory_receipts_line",
             selects=["item_id", "date_created"],
             page_size=1000,
         )
-        receipts: List[Dict[str, Any]] = receipts_raw if receipts_raw else []
-        item_receipt_dates: defaultdict[str, List[Any]] = defaultdict(list)
-        for row in receipts:
-            item_id = row.get("item_id")
-            receipt_date = row.get("date_created")
-            if item_id and receipt_date:
-                item_receipt_dates[item_id].append(receipt_date)
-        last_received_date: Dict[str, Any] = {
-            item_id: max(dates)
-            for item_id, dates in item_receipt_dates.items()
-            if dates
-        }
+        last_received_date = self._max_date_per_item(receipts or [], "date_created")
 
-        # Fetch supplier names for all unique supplier IDs
-        unique_supplier_ids = {v for v in supplier_id_map.values() if v is not None}
-        supplier_name_map: Dict[Any, str] = {}
-        if unique_supplier_ids:
-            supplier_filter = ReportBase.build_or_filter(
-                "supplier_id", unique_supplier_ids, quote_strings=False
-            )
-            supplier_rows, _ = self._client.query_odataservice(
-                endpoint="p21_view_supplier",
-                selects=["supplier_id", "supplier_name"],
-                filters=[f"({supplier_filter})"] if supplier_filter else [],
-                page_size=500,
-            )
-            if supplier_rows:
-                for row in supplier_rows:
-                    sid = row.get("supplier_id")
-                    sname = row.get("supplier_name")
-                    if sid is not None and sname is not None:
-                        supplier_name_map[sid] = sname
+        supplier_name_map = self._fetch_supplier_names(inventory)
 
-        # Filter inventory for items not sold since cutoff (no sales after cutoff)
-        dead_inventory_rows: List[Dict[str, Any]] = []
         cutoff_str = self._start_date.strftime("%Y-%m-%d")
-        for item_id in qty_on_hand_map.keys():
-            qoh = qty_on_hand_map.get(item_id, 0)
+        dead_inventory_rows = []
+        for item_id, info in inventory.items():
+            qoh = info["qty_on_hand"]
             if qoh <= 0:
                 continue  # Skip items with no inventory on hand
+
             # If item has no sales, or last sales date < cutoff, include
             last_date = last_sales_date.get(item_id)
-            unit_cost = cost_map.get(item_id, None)
-            value_on_hand = None
-            try:
-                if unit_cost is not None:
-                    value_on_hand = float(unit_cost) * float(qoh)
-            except Exception:
-                value_on_hand = None
-            last_received = last_received_date.get(item_id, "")
-            supplier_id = supplier_id_map.get(item_id)
+            if last_date and last_date >= cutoff_str:
+                continue
+
+            unit_cost = info["standard_cost"]
+            value_on_hand = unit_cost * qoh if unit_cost is not None else None
+            supplier_id = info["primary_supplier_id"]
             supplier_name = (
                 supplier_name_map.get(supplier_id, "")
                 if supplier_id is not None
                 else ""
             )
-            if not last_date or last_date < cutoff_str:
-                dead_inventory_rows.append(
-                    {
-                        "Item ID": item_id,
-                        "Quantity on hand (QOH)": qoh,
-                        "Last sales date": last_date or "",
-                        "Last received date": last_received,
-                        "Unit cost": unit_cost,
-                        "Value on hand": value_on_hand,
-                        "Supplier Name": supplier_name,
-                    }
-                )
 
-        if dead_inventory_rows:
-            # Sort by Value on hand descending
-            sorted_rows = sorted(
-                dead_inventory_rows,
-                key=lambda row: (
-                    row["Value on hand"]
-                    if row["Value on hand"] is not None
-                    else -float("inf")
-                ),
-                reverse=True,
+            dead_inventory_rows.append(
+                {
+                    "Item ID": item_id,
+                    "Quantity on hand (QOH)": qoh,
+                    "Last sales date": last_date or "",
+                    "Last received date": last_received_date.get(item_id, ""),
+                    "Unit cost": unit_cost,
+                    "Value on hand": value_on_hand,
+                    "Supplier Name": supplier_name,
+                }
             )
-            etl.tocsv(etl.fromdicts(sorted_rows), self.file_name("report"))
+
+        if not dead_inventory_rows:
+            return
+
+        # Sort by Value on hand descending
+        sorted_rows = sorted(
+            dead_inventory_rows,
+            key=lambda row: (
+                row["Value on hand"]
+                if row["Value on hand"] is not None
+                else -float("inf")
+            ),
+            reverse=True,
+        )
+        etl.tocsv(etl.fromdicts(sorted_rows), self.file_name("report"))
+
+    def _aggregate_inventory(
+        self, inv_loc_data: list[dict[str, Any]]
+    ) -> Dict[Any, Dict[str, Any]]:
+        """Sum qty_on_hand and take the first non-null cost/supplier per item,
+        across possibly multiple location rows per item."""
+        rows_with_item_id = [row for row in inv_loc_data if row.get("item_id")]
+        if not rows_with_item_id:
+            return {}
+        table = etl.fromdicts(rows_with_item_id)
+        aggregated = etl.aggregate(
+            table,
+            "item_id",
+            {
+                "qty_on_hand": ("qty_on_hand", _safe_float_sum),
+                "standard_cost": ("standard_cost", _first_non_null_float),
+                "primary_supplier_id": ("primary_supplier_id", _first_non_null),
+            },
+        )
+        return {row["item_id"]: row for row in etl.dicts(aggregated)}
+
+    def _max_date_per_item(
+        self, rows: list[dict[str, Any]], date_field: str
+    ) -> Dict[Any, Any]:
+        """Return the max value of date_field per item_id, for rows where both
+        item_id and date_field are present."""
+        filtered = [row for row in rows if row.get("item_id") and row.get(date_field)]
+        if not filtered:
+            return {}
+        table = etl.fromdicts(filtered)
+        aggregated = etl.aggregate(
+            table, "item_id", {"max_date": (date_field, _max_or_none)}
+        )
+        return {
+            row["item_id"]: row["max_date"]
+            for row in etl.dicts(aggregated)
+            if row["max_date"]
+        }
+
+    def _fetch_supplier_names(
+        self, inventory: Dict[Any, Dict[str, Any]]
+    ) -> Dict[Any, str]:
+        """Fetch supplier names for all supplier IDs referenced in inventory."""
+        unique_supplier_ids = {
+            info["primary_supplier_id"]
+            for info in inventory.values()
+            if info["primary_supplier_id"] is not None
+        }
+        if not unique_supplier_ids:
+            return {}
+
+        supplier_filter = ReportBase.build_or_filter(
+            "supplier_id", unique_supplier_ids, quote_strings=False
+        )
+        supplier_rows, _ = self._client.query(
+            endpoint="p21_view_supplier",
+            selects=["supplier_id", "supplier_name"],
+            filters=[f"({supplier_filter})"] if supplier_filter else [],
+            page_size=500,
+        )
+        return {
+            row["supplier_id"]: row["supplier_name"]
+            for row in (supplier_rows or [])
+            if row.get("supplier_id") is not None
+            and row.get("supplier_name") is not None
+        }

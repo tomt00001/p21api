@@ -5,7 +5,7 @@ Provides functions to load and query the OData schema summary JSON for AI agent 
 script use.
 
 Usage:
-    from odata_schema_helper import ODataSchema
+    from scripts.odata_schema_helper import ODataSchema
     schema = ODataSchema.load_from_file('odata_schema/odata_schema_summary.json')
     entity_names = schema.list_entities()
     props = schema.get_properties('p21_view_customer')

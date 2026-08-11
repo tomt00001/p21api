@@ -32,7 +32,7 @@ class TestReportDailySales:
         sample_invoice_data,
     ):
         """Test report execution with data."""
-        mock_odata_client.query_odataservice.return_value = (
+        mock_odata_client.query.return_value = (
             sample_invoice_data,
             "test_url",
         )
@@ -50,7 +50,7 @@ class TestReportDailySales:
 
         report._run()
 
-        mock_odata_client.query_odataservice.assert_called_once_with(
+        mock_odata_client.query.assert_called_once_with(
             endpoint="p21_view_invoice_hdr",
             selects=[
                 "bill2_name",
@@ -73,7 +73,7 @@ class TestReportDailySales:
 
     def test_run_with_no_data(self, mock_config, mock_odata_client):
         """Test report execution with no data."""
-        mock_odata_client.query_odataservice.return_value = (None, "test_url")
+        mock_odata_client.query.return_value = (None, "test_url")
 
         report = ReportDailySales(
             client=mock_odata_client,

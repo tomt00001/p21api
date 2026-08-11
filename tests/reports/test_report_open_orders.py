@@ -70,7 +70,7 @@ class TestReportOpenOrders:
             }
         ]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (order_data, "url1"),
             (order_ack_line_data, "url2"),
         ]
@@ -92,8 +92,8 @@ class TestReportOpenOrders:
 
         report._run()
 
-        # Should make 2 calls to query_odataservice
-        assert mock_odata_client.query_odataservice.call_count == 2
+        # Should make 2 calls to query
+        assert mock_odata_client.query.call_count == 2
         mock_fromdicts.assert_called()
         mock_join.assert_called()
         mock_cut.assert_called()
@@ -108,7 +108,7 @@ class TestReportOpenOrders:
         """Test open orders report execution with no order data."""
         from p21api.report_open_orders import ReportOpenOrders
 
-        mock_odata_client.query_odataservice.return_value = ([], "test_url")
+        mock_odata_client.query.return_value = ([], "test_url")
 
         report = ReportOpenOrders(
             client=mock_odata_client,
@@ -122,7 +122,7 @@ class TestReportOpenOrders:
         report._run()
 
         # Should only make 1 call and return early
-        assert mock_odata_client.query_odataservice.call_count == 1
+        assert mock_odata_client.query.call_count == 1
         mock_fromdicts.assert_not_called()
         mock_tocsv.assert_not_called()
 
@@ -136,7 +136,7 @@ class TestReportOpenOrders:
 
         order_data = [{"order_no": "ORD001", "customer_id": 12087}]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (order_data, "url1"),
             ([], "url2"),  # No ack line data
         ]
@@ -156,7 +156,7 @@ class TestReportOpenOrders:
         report._run()
 
         # Should make 2 calls and return early
-        assert mock_odata_client.query_odataservice.call_count == 2
+        assert mock_odata_client.query.call_count == 2
 
     @patch("petl.tocsv")
     @patch("petl.fromdicts")
@@ -169,7 +169,7 @@ class TestReportOpenOrders:
         order_data = [{"order_no": "ORD001", "customer_id": 12087}]
         order_ack_line_data = [{"order_no": "ORD001", "item_id": "ITEM001"}]
 
-        mock_odata_client.query_odataservice.side_effect = [
+        mock_odata_client.query.side_effect = [
             (order_data, "url1"),
             (order_ack_line_data, "url2"),
         ]

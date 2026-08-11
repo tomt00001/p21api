@@ -40,7 +40,7 @@ class TestReportMonthlyConsolidation:
             }
         ]
 
-        mock_odata_client.query_odataservice.return_value = (
+        mock_odata_client.query.return_value = (
             consolidation_data,
             "test_url",
         )
@@ -58,7 +58,7 @@ class TestReportMonthlyConsolidation:
 
         report._run()
 
-        mock_odata_client.query_odataservice.assert_called_once()
+        mock_odata_client.query.assert_called_once()
         mock_fromdicts.assert_called()
         mock_tocsv.assert_called()
 
@@ -70,7 +70,7 @@ class TestReportMonthlyConsolidation:
         """Test monthly consolidation report execution with no data."""
         from p21api.report_monthly_consolidation import ReportMonthlyConsolidation
 
-        mock_odata_client.query_odataservice.return_value = ([], "test_url")
+        mock_odata_client.query.return_value = ([], "test_url")
 
         report = ReportMonthlyConsolidation(
             client=mock_odata_client,
@@ -83,6 +83,6 @@ class TestReportMonthlyConsolidation:
 
         report._run()
 
-        mock_odata_client.query_odataservice.assert_called_once()
+        mock_odata_client.query.assert_called_once()
         mock_fromdicts.assert_not_called()
         mock_tocsv.assert_not_called()
